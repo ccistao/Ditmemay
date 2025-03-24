@@ -47,33 +47,49 @@ end
 roundCorners(buttonAimbot)
 roundCorners(buttonNoclip)
 
--- Kéo thả cả 2 nút cùng nhau
+-- Kéo thả nút toàn màn hình
 local dragging, dragInput, dragStart, startPos
+
 local function update(input)
-    local delta = input.Position - dragStart
-    local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset)
-    buttonAimbot.Position = newPos
-    buttonNoclip.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset + 160, newPos.Y.Scale, newPos.Y.Offset) -- Giữ khoảng cách 10px
+    if dragging then
+        local delta = input.Position - dragStart
+        buttonAimbot.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+        buttonNoclip.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X + 160,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        ) -- Giữ khoảng cách 10px
+    end
 end
-buttonAimbot.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = buttonAimbot.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-buttonAimbot.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
+
+local function startDragging(button)
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = button.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    button.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+end
+
+startDragging(buttonAimbot)
+startDragging(buttonNoclip)
+
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if dragging and input == dragInput then
+    if input == dragInput then
         update(input)
     end
 end)
