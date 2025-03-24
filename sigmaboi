@@ -130,21 +130,24 @@ buttonAimbot.MouseButton1Click:Connect(function()
     end
 end)
 
--- Noclip (sửa lỗi khập khiễng)
+-- Noclip
 local noclip = false
 local noclipLoop
+
 buttonNoclip.MouseButton1Click:Connect(function()
     noclip = not noclip
-    buttonNoclip.Text = noclip and "Noclip: BẬT" or "Noclip: TẮT"
+    buttonNoclip.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+
     if noclip then
         noclipLoop = game:GetService("RunService").Stepped:Connect(function()
-            if player.Character then
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                 for _, v in ipairs(player.Character:GetDescendants()) do
-                    if v:IsA("BasePart") then
+                    if v:IsA("BasePart") and v.CanCollide then
                         v.CanCollide = false
-                        v.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0) -- Vô hiệu hóa va chạm
                     end
                 end
+                -- Giữ nhân vật không rơi xuống void
+                player.Character:FindFirstChild("HumanoidRootPart").Velocity = Vector3.new(0, 0, 0)
             end
         end)
     else
@@ -153,8 +156,12 @@ buttonNoclip.MouseButton1Click:Connect(function()
             for _, v in ipairs(player.Character:GetDescendants()) do
                 if v:IsA("BasePart") then
                     v.CanCollide = true
-                    v.CustomPhysicalProperties = nil -- Khôi phục trạng thái ban đầu
                 end
+            end
+            -- Reset lại tốc độ di chuyển để tránh hiệu ứng trượt băng
+            local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = humanoid.WalkSpeed + 0.01 -- Kích hoạt lại hệ thống di chuyển
             end
         end
     end
