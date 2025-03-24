@@ -1,4 +1,4 @@
---dead rails wall hack aimbot.
+-- dead rails wall hack aimbot.
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 player.CameraMode = Enum.CameraMode.Classic
@@ -7,7 +7,7 @@ local StarterGui = game:GetService("StarterGui")
 local camera = workspace.CurrentCamera
  
 StarterGui:SetCore("SendNotification", {
-    Title = "Code by GioBolqvi", -- dont skid ðŸ™ðŸ’”
+    Title = "Code by zerodeptrai",
     Text = "on Roblox",
     Duration = 3
 })
@@ -19,7 +19,7 @@ screenGui.Parent = game:GetService("CoreGui")
 -- Tạo nút NPC Lock
 local buttonAimbot = Instance.new("TextButton")
 buttonAimbot.Size = UDim2.new(0, 150, 0, 50)
-buttonAimbot.Position = UDim2.new(0.5, -75, 0.9, -25)
+buttonAimbot.Position = UDim2.new(0.5, -75, 0.5, -25)
 buttonAimbot.BackgroundColor3 = Color3.new(0, 0, 0)
 buttonAimbot.TextColor3 = Color3.new(1, 1, 1)
 buttonAimbot.Text = "NPC Lock: TẮT"
@@ -27,10 +27,10 @@ buttonAimbot.Font = Enum.Font.Fantasy
 buttonAimbot.TextScaled = true
 buttonAimbot.Parent = screenGui
 
--- Tạo nút Noclip (cách Aimbot 10px qua phải)
+-- Tạo nút Noclip
 local buttonNoclip = Instance.new("TextButton")
 buttonNoclip.Size = UDim2.new(0, 150, 0, 50)
-buttonNoclip.Position = UDim2.new(0.5, 85, 0.9, -25) -- Cách 10px qua phải
+buttonNoclip.Position = UDim2.new(0.5, 85, 0.5, -25)
 buttonNoclip.BackgroundColor3 = Color3.new(0, 0, 0)
 buttonNoclip.TextColor3 = Color3.new(1, 1, 1)
 buttonNoclip.Text = "Noclip: TẮT"
@@ -47,107 +47,118 @@ end
 roundCorners(buttonAimbot)
 roundCorners(buttonNoclip)
 
--- Kéo thả nút toàn màn hình
+-- Kéo thả cả 2 nút cùng nhau (đã sửa lỗi)
 local dragging, dragInput, dragStart, startPos
-
 local function update(input)
-    if dragging then
-        local delta = input.Position - dragStart
-        buttonAimbot.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-        buttonNoclip.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X + 160,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        ) -- Giữ khoảng cách 10px
+    local delta = input.Position - dragStart
+    local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    buttonAimbot.Position = newPos
+    buttonNoclip.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset + 160, newPos.Y.Scale, newPos.Y.Offset)
+end
+buttonAimbot.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = buttonAimbot.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
-end
-
-local function startDragging(button)
-    button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = button.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    button.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-end
-
-startDragging(buttonAimbot)
-startDragging(buttonNoclip)
-
+end)
+buttonAimbot.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput then
+    if dragging and input == dragInput then
         update(input)
     end
 end)
 
--- NPC Lock
+-- Hàm tìm NPC gần nhất
+local function getClosestNPC()
+    local closestNPC = nil
+    local closestDistance = math.huge
+
+    for _, object in ipairs(workspace:GetDescendants()) do
+        if object:IsA("Model") then
+            local humanoid = object:FindFirstChild("Humanoid") or object:FindFirstChildWhichIsA("Humanoid")
+            local hrp = object:FindFirstChild("HumanoidRootPart") or object.PrimaryPart
+            if humanoid and hrp and humanoid.Health > 0 and object.Name ~= "Horse" then
+                local isPlayer = false
+                for _, pl in ipairs(Players:GetPlayers()) do
+                    if pl.Character == object then
+                        isPlayer = true
+                        break
+                    end
+                end
+                if not isPlayer then
+                    local distance = (hrp.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestNPC = object
+                    end
+                end
+            end
+        end
+    end
+
+    return closestNPC
+end
+
+-- NPC Lock (sửa lỗi không hoạt động)
 local npcLock = false
 local toggleLoop
 buttonAimbot.MouseButton1Click:Connect(function()
     npcLock = not npcLock
-    buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TắT"
-    
+    buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
     if npcLock then
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
-            local npc = getClosestNPC() -- Lấy NPC gần nhất
+            local npc = getClosestNPC() -- Sử dụng hàm mới
             if npc and npc:FindFirstChild("HumanoidRootPart") then
-                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("HumanoidRootPart") -- Aim vào NPC
+                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("HumanoidRootPart")
+            else
+                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
             end
         end)
     else
         if toggleLoop then toggleLoop:Disconnect() end
-        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid") -- Trả camera về bình thường
+        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
     end
 end)
-    
--- Noclip cải tiến
+
+-- Noclip (sửa lỗi khập khiễng)
 local noclip = false
 local noclipLoop
-
 buttonNoclip.MouseButton1Click:Connect(function()
     noclip = not noclip
     buttonNoclip.Text = noclip and "Noclip: BẬT" or "Noclip: TẮT"
-
     if noclip then
-        noclipLoop = runService.Stepped:Connect(function()
-            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        noclipLoop = game:GetService("RunService").Stepped:Connect(function()
+            if player.Character then
                 for _, v in ipairs(player.Character:GetDescendants()) do
                     if v:IsA("BasePart") then
                         v.CanCollide = false
-                        v.Velocity = Vector3.new(0, 0, 0) -- Giữ nhân vật không bị tác động vật lý
+                        v.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0) -- Vô hiệu hóa va chạm
                     end
                 end
             end
         end)
     else
         if noclipLoop then noclipLoop:Disconnect() end
-        task.spawn(function()
-            if player.Character then
-                for _, v in ipairs(player.Character:GetDescendants()) do
-                    if v:IsA("BasePart") then
-                        v.CanCollide = true
-                        v.Velocity = Vector3.new(0, 0, 0) -- Reset lại vận tốc tránh giật lắc
-                    end
+        if player.Character then
+            for _, v in ipairs(player.Character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = true
+                    v.CustomPhysicalProperties = nil -- Khôi phục trạng thái ban đầu
                 end
             end
-        end)
+        end
     end
 end)
-
  
 local function addPlayerHighlight()
     if player.Character then
