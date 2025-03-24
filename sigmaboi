@@ -99,33 +99,40 @@ buttonAimbot.MouseButton1Click:Connect(function()
     end
 end)
 
--- Noclip
+-- Noclip cải tiến
 local noclip = false
 local noclipLoop
+
 buttonNoclip.MouseButton1Click:Connect(function()
     noclip = not noclip
-    buttonNoclip.Text = noclip and "Noclip: BẬT" or "Noclip: TẮT"
+    buttonNoclip.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+
     if noclip then
-        noclipLoop = game:GetService("RunService").Stepped:Connect(function()
-            if game.Players.LocalPlayer.Character then
-                for _, v in ipairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                    if v:IsA("BasePart") and v.CanCollide then
+        noclipLoop = runService.Stepped:Connect(function()
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                for _, v in ipairs(player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
                         v.CanCollide = false
+                        v.Velocity = Vector3.new(0, 0, 0) -- Giữ nhân vật không bị tác động vật lý
                     end
                 end
             end
         end)
     else
         if noclipLoop then noclipLoop:Disconnect() end
-        if game.Players.LocalPlayer.Character then
-            for _, v in ipairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = true
+        task.spawn(function()
+            if player.Character then
+                for _, v in ipairs(player.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = true
+                        v.Velocity = Vector3.new(0, 0, 0) -- Reset lại vận tốc tránh giật lắc
+                    end
                 end
             end
-        end
+        end)
     end
 end)
+
  
 local function addPlayerHighlight()
     if player.Character then
