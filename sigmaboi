@@ -25,7 +25,7 @@ buttonAimbot.TextColor3 = Color3.new(1, 1, 1)
 buttonAimbot.Text = "NPC Lock: OFF"
 buttonAimbot.Font = Enum.Font.Fantasy
 buttonAimbot.TextScaled = true
-buttonAimbot.Parent = game:GetService("CoreGui")
+buttonAimbot.Parent = screenGui
 
 -- Tạo nút Noclip (cách Aimbot 10px qua phải)
 local buttonNoclip = Instance.new("TextButton")
@@ -36,7 +36,7 @@ buttonNoclip.TextColor3 = Color3.new(1, 1, 1)
 buttonNoclip.Text = "Noclip: OFF"
 buttonNoclip.Font = Enum.Font.Fantasy
 buttonNoclip.TextScaled = true
-buttonNoclip.Parent = game:GetService("CoreGui")
+buttonNoclip.Parent = screenGui
 
 -- Bo góc nút
 local function roundCorners(button)
