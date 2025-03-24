@@ -117,8 +117,10 @@ buttonAimbot.MouseButton1Click:Connect(function()
     buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
 
     if npcLock then
-        -- Bật aimbot: Chuyển sang góc nhìn thứ 3
+        -- Bật aimbot: Chuyển sang góc nhìn thứ 3 và khóa lại
         player.CameraMode = Enum.CameraMode.Classic
+        player.CameraMinZoomDistance = 5 -- Khoảng cách zoom tối thiểu (Third-Person)
+        player.CameraMaxZoomDistance = 10 -- Khoảng cách zoom tối đa (giới hạn góc nhìn thứ 3)
         
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
             local npc = getClosestNPC()
@@ -129,10 +131,12 @@ buttonAimbot.MouseButton1Click:Connect(function()
             end
         end)
     else
-        -- Tắt aimbot: Quay lại góc nhìn thứ 1 và khóa lại
+        -- Tắt aimbot: Chuyển về góc nhìn thứ 1 và khóa lại
         if toggleLoop then toggleLoop:Disconnect() end
         workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
         player.CameraMode = Enum.CameraMode.LockFirstPerson
+        player.CameraMinZoomDistance = 0.5 -- Đảm bảo về First-Person
+        player.CameraMaxZoomDistance = 0.5 -- Không thể zoom ra góc nhìn thứ 3
     end
 end)
 
