@@ -22,7 +22,7 @@ buttonAimbot.Size = UDim2.new(0, 150, 0, 50)
 buttonAimbot.Position = UDim2.new(0.5, -75, 0.9, -25)
 buttonAimbot.BackgroundColor3 = Color3.new(0, 0, 0)
 buttonAimbot.TextColor3 = Color3.new(1, 1, 1)
-buttonAimbot.Text = "NPC Lock: OFF"
+buttonAimbot.Text = "NPC Lock: TẮT"
 buttonAimbot.Font = Enum.Font.Fantasy
 buttonAimbot.TextScaled = true
 buttonAimbot.Parent = screenGui
@@ -33,7 +33,7 @@ buttonNoclip.Size = UDim2.new(0, 150, 0, 50)
 buttonNoclip.Position = UDim2.new(0.5, 85, 0.9, -25) -- Cách 10px qua phải
 buttonNoclip.BackgroundColor3 = Color3.new(0, 0, 0)
 buttonNoclip.TextColor3 = Color3.new(1, 1, 1)
-buttonNoclip.Text = "Noclip: OFF"
+buttonNoclip.Text = "Noclip: TẮT"
 buttonNoclip.Font = Enum.Font.Fantasy
 buttonNoclip.TextScaled = true
 buttonNoclip.Parent = screenGui
@@ -99,29 +99,28 @@ local npcLock = false
 local toggleLoop
 buttonAimbot.MouseButton1Click:Connect(function()
     npcLock = not npcLock
-    buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
+    buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TắT"
+    
     if npcLock then
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
-            local npc = workspace:FindFirstChild("NPC") -- Cần cập nhật điều kiện tìm NPC
-            if npc and npc:FindFirstChild("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("Humanoid")
-            else
-                workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+            local npc = getClosestNPC() -- Lấy NPC gần nhất
+            if npc and npc:FindFirstChild("HumanoidRootPart") then
+                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("HumanoidRootPart") -- Aim vào NPC
             end
         end)
     else
         if toggleLoop then toggleLoop:Disconnect() end
-        workspace.CurrentCamera.CameraSubject = game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid") -- Trả camera về bình thường
     end
 end)
-
+    
 -- Noclip cải tiến
 local noclip = false
 local noclipLoop
 
 buttonNoclip.MouseButton1Click:Connect(function()
     noclip = not noclip
-    buttonNoclip.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+    buttonNoclip.Text = noclip and "Noclip: BẬT" or "Noclip: TẮT"
 
     if noclip then
         noclipLoop = runService.Stepped:Connect(function()
