@@ -86,7 +86,7 @@ local function getClosestNPC()
     for _, object in ipairs(workspace:GetDescendants()) do
         if object:IsA("Model") then
             local humanoid = object:FindFirstChild("Humanoid") or object:FindFirstChildWhichIsA("Humanoid")
-            local hrp = object:FindFirstChild("HumanoidRootPart") or object.PrimaryPart
+            local hrp = object:FindFirstChild("Head") or object:FindFirstChild("HumanoidRootPart") or object.PrimaryPart
             if humanoid and hrp and humanoid.Health > 0 and object.Name ~= "Horse" then
                 local isPlayer = false
                 for _, pl in ipairs(Players:GetPlayers()) do
@@ -118,8 +118,8 @@ buttonAimbot.MouseButton1Click:Connect(function()
     if npcLock then
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
             local npc = getClosestNPC() -- Sử dụng hàm mới
-            if npc and npc:FindFirstChild("HumanoidRootPart") then
-                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("HumanoidRootPart")
+            if npc and npc:FindFirstChild("Head") then
+                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("Head")
             else
                 workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
             end
