@@ -115,9 +115,13 @@ local toggleLoop
 buttonAimbot.MouseButton1Click:Connect(function()
     npcLock = not npcLock
     buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
+
     if npcLock then
+        -- Bật aimbot: Chuyển sang góc nhìn thứ 3
+        player.CameraMode = Enum.CameraMode.Classic
+        
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
-            local npc = getClosestNPC() -- Sử dụng hàm mới
+            local npc = getClosestNPC()
             if npc and npc:FindFirstChild("Head") then
                 workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("Head")
             else
@@ -125,8 +129,10 @@ buttonAimbot.MouseButton1Click:Connect(function()
             end
         end)
     else
+        -- Tắt aimbot: Quay lại góc nhìn thứ 1 và khóa lại
         if toggleLoop then toggleLoop:Disconnect() end
         workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+        player.CameraMode = Enum.CameraMode.LockFirstPerson
     end
 end)
 
