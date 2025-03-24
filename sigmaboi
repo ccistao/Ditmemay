@@ -83,7 +83,7 @@ local npcLock = false
 local toggleLoop
 buttonAimbot.MouseButton1Click:Connect(function()
     npcLock = not npcLock
-    buttonAimbot.Text = npcLock and "NPC Lock: ON" or "NPC Lock: OFF"
+    buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
     if npcLock then
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
             local npc = workspace:FindFirstChild("NPC") -- Cần cập nhật điều kiện tìm NPC
@@ -104,7 +104,7 @@ local noclip = false
 local noclipLoop
 buttonNoclip.MouseButton1Click:Connect(function()
     noclip = not noclip
-    buttonNoclip.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+    buttonNoclip.Text = noclip and "Noclip: BẬT" or "Noclip: TẮT"
     if noclip then
         noclipLoop = game:GetService("RunService").Stepped:Connect(function()
             if game.Players.LocalPlayer.Character then
