@@ -109,7 +109,7 @@ local function getClosestNPC()
     return closestNPC
 end
 
--- NPC Lock (sửa lỗi không hoạt động)
+-- NPC Lock (sửa lỗi không hoạt động
 local npcLock = false
 local toggleLoop
 
@@ -125,11 +125,9 @@ buttonAimbot.MouseButton1Click:Connect(function()
         player.CameraMinZoomDistance = 10
         player.CameraMaxZoomDistance = 10
         
-        -- Đảm bảo camera bắt đầu ở góc nhìn thứ 3, cách nhân vật một khoảng và hướng về Head
+        -- Đảm bảo camera bắt đầu ở góc nhìn thứ 3
         local rootPart = player.Character:WaitForChild("HumanoidRootPart")
-        local head = player.Character:WaitForChild("Head")
-        local cameraPosition = head.Position - (head.Position - rootPart.Position).unit * 10  -- Tính toán vị trí camera ở phía sau nhân vật
-        camera.CFrame = CFrame.new(cameraPosition, head.Position)  -- Đặt CFrame để camera hướng về head
+        camera.CFrame = CFrame.new(rootPart.Position + Vector3.new(0, 5, 10), rootPart.Position)
 
         -- Start the loop for camera subject
         if toggleLoop then
