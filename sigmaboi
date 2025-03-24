@@ -165,7 +165,7 @@ local function toggleNoclip()
 end
 
 -- Gán chức năng vào nút
-buttonNoclip.MouseButton1Click:Connect(buttonNoclip)
+buttonNoclip.MouseButton1Click:Connect(toggleNoclip)
  
 local function addPlayerHighlight()
     if player.Character then
