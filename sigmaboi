@@ -178,10 +178,10 @@ local function getClosestNPC()
     return closestNPC
 end
  
-button.MouseButton1Click:Connect(function()
+buttonAimbot.MouseButton1Click:Connect(function()
     npcLock = not npcLock
     if npcLock then
-        button.Text = "NPC Lock: BẬT"
+        buttonAimbot.Text = "NPC Lock: ON"
         toggleLoop = runService.RenderStepped:Connect(function()
             local npc = getClosestNPC()
             if npc and npc:FindFirstChild("Humanoid") then
@@ -211,7 +211,7 @@ button.MouseButton1Click:Connect(function()
             end
         end)
     else
-        button.Text = "NPC Lock: TẮT"
+        buttonAimbot.Text = "NPC Lock: TẮT"
         if toggleLoop then
             toggleLoop:Disconnect()
             toggleLoop = nil
