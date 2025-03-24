@@ -11,7 +11,19 @@ StarterGui:SetCore("SendNotification", {
     Text = "on Roblox",
     Duration = 3
 })
- 
+
+local Light = game:GetService("Lighting")
+
+function dofullbright()
+Light.Ambient = Color3.new(1, 1, 1)
+Light.ColorShift_Bottom = Color3.new(1, 1, 1)
+Light.ColorShift_Top = Color3.new(1, 1, 1)
+end
+
+dofullbright()
+
+Light.LightingChanged:Connect(dofullbright)
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "NPC_Lock_GUI"
 screenGui.Parent = game:GetService("CoreGui")
@@ -121,9 +133,22 @@ buttonAimbot.MouseButton1Click:Connect(function()
         -- Bật aimbot: Chuyển sang góc nhìn thứ 3 và đảm bảo camera zoom ra
         player.CameraMode = Enum.CameraMode.Classic
         
-        -- Đặt khoảng cách zoom của camera
-        player.CameraMinZoomDistance = 10
-        player.CameraMaxZoomDistance = 10
+        -- Bắt đầu zoom từ từ
+        local targetZoom = 10
+        local zoomSpeed = 0.1 -- Điều chỉnh tốc độ zoom (0.2 là khá chậm)
+        
+        -- Dùng một hàm để zoom từ từ
+        local currentZoom = player.CameraMaxZoomDistance
+        local function zoomInOut()
+            if math.abs(currentZoom - targetZoom) > 0.1 then
+                currentZoom = currentZoom + (targetZoom - currentZoom) * zoomSpeed
+                player.CameraMaxZoomDistance = currentZoom
+            else
+                player.CameraMaxZoomDistance = targetZoom
+                return true -- Đã hoàn thành quá trình zoom
+            end
+            return false
+        end
         
         -- Đảm bảo camera bắt đầu ở góc nhìn thứ 3
         local rootPart = player.Character:WaitForChild("HumanoidRootPart")
@@ -139,6 +164,11 @@ buttonAimbot.MouseButton1Click:Connect(function()
                 workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("Head")
             else
                 workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+            end
+            
+            -- Thực hiện quá trình zoom từ từ
+            if zoomInOut() then
+                toggleLoop:Disconnect() -- Khi zoom hoàn thành, ngừng chạy loop
             end
         end)
     else
