@@ -97,8 +97,8 @@ local function getClosestNPC()
                 end
                 if not isPlayer then
                     local distance = (hrp.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                    if distance < closestDistance then
-                        if distance < closestDistance and distance <= 400 then
+                    if distance < closestDistance and distance <= 400 then
+                        closestDistance = distance
                         closestNPC = object
                     end
                 end
