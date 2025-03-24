@@ -133,19 +133,19 @@ buttonAimbot.MouseButton1Click:Connect(function()
         -- Bật aimbot: Chuyển sang góc nhìn thứ 3 và đảm bảo camera zoom ra
         player.CameraMode = Enum.CameraMode.Classic
         
-        -- Bắt đầu zoom từ từ
+        -- Bắt đầu zoom từ từ ra góc nhìn thứ 3
         local targetZoom = 10
-        local zoomSpeed = 0.1 -- Điều chỉnh tốc độ zoom (0.2 là khá chậm)
-        
-        -- Dùng một hàm để zoom từ từ
+        local zoomSpeed = 0.2 -- Tốc độ zoom
         local currentZoom = player.CameraMaxZoomDistance
-        local function zoomInOut()
-            if math.abs(currentZoom - targetZoom) > 0.1 then
-                currentZoom = currentZoom + (targetZoom - currentZoom) * zoomSpeed
+        
+        -- Hàm zoom ra
+        local function zoomInOut(target)
+            if math.abs(currentZoom - target) > 0.1 then
+                currentZoom = currentZoom + (target - currentZoom) * zoomSpeed
                 player.CameraMaxZoomDistance = currentZoom
             else
-                player.CameraMaxZoomDistance = targetZoom
-                return true -- Đã hoàn thành quá trình zoom
+                player.CameraMaxZoomDistance = target
+                return true
             end
             return false
         end
@@ -166,12 +166,28 @@ buttonAimbot.MouseButton1Click:Connect(function()
                 workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
             end
             
-            -- Thực hiện quá trình zoom từ từ
-            if zoomInOut() then
+            -- Thực hiện zoom ra
+            if zoomInOut(targetZoom) then
                 toggleLoop:Disconnect() -- Khi zoom hoàn thành, ngừng chạy loop
             end
         end)
     else
+        -- Zoom lại vào góc nhìn thứ 1
+        local targetZoom = 0.5
+        local currentZoom = player.CameraMaxZoomDistance
+
+        -- Hàm zoom vào góc nhìn thứ 1
+        local function zoomBackIn(target)
+            if math.abs(currentZoom - target) > 0.1 then
+                currentZoom = currentZoom + (target - currentZoom) * 0.2
+                player.CameraMaxZoomDistance = currentZoom
+            else
+                player.CameraMaxZoomDistance = target
+                return true
+            end
+            return false
+        end
+
         -- Tắt aimbot: Quay lại góc nhìn thứ 1 và khóa lại
         if toggleLoop then
             toggleLoop:Disconnect()  -- Ngắt kết nối để không tiếp tục theo dõi NPC
@@ -179,9 +195,11 @@ buttonAimbot.MouseButton1Click:Connect(function()
         workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
         player.CameraMode = Enum.CameraMode.LockFirstPerson
 
-        -- Đặt khoảng cách zoom của camera khi về lại góc nhìn thứ 1
-        player.CameraMinZoomDistance = 0.5
-        player.CameraMaxZoomDistance = 0.5
+        -- Zoom lại về góc nhìn thứ 1
+        if zoomBackIn(targetZoom) then
+            player.CameraMinZoomDistance = 0.5
+            player.CameraMaxZoomDistance = 0.5
+        end
     end
 end)
 
@@ -220,24 +238,3 @@ local function toggleNoclip()
 end
 
 buttonNoclip.MouseButton1Click:Connect(toggleNoclip)
- 
-local function addPlayerHighlight()
-    if player.Character then
-        local highlight = player.Character:FindFirstChild("PlayerHighlightESP")
-        if not highlight then
-            highlight = Instance.new("Highlight")
-            highlight.Name = "PlayerHighlightESP"
-            highlight.FillColor = Color3.new(1, 1, 1)
-            highlight.OutlineColor = Color3.new(1, 1, 1)
-            highlight.FillTransparency = 0.5
-            highlight.OutlineTransparency = 0
-            highlight.Parent = player.Character
-        end
-    end
-end
- 
-local function removePlayerHighlight()
-    if player.Character and player.Character:FindFirstChild("PlayerHighlightESP") then
-        player.Character.PlayerHighlightESP:Destroy()
-    end
-end
