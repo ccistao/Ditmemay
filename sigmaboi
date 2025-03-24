@@ -118,32 +118,40 @@ buttonAimbot.MouseButton1Click:Connect(function()
     buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
 
     if npcLock then
+        -- Bật aimbot: Chuyển sang góc nhìn thứ 3 và đảm bảo camera zoom ra
         player.CameraMode = Enum.CameraMode.Classic
+        
+        -- Đặt khoảng cách zoom của camera
         player.CameraMinZoomDistance = 10
         player.CameraMaxZoomDistance = 10
         
+        -- Đảm bảo camera bắt đầu ở góc nhìn thứ 3, cách nhân vật một khoảng và hướng về Head
         local rootPart = player.Character:WaitForChild("HumanoidRootPart")
-        local cameraPosition = rootPart.Position - rootPart.CFrame.LookVector * 10
-        workspace.CurrentCamera.CFrame = CFrame.new(cameraPosition, rootPart.Position)
+        local head = player.Character:WaitForChild("Head")
+        local cameraPosition = head.Position - (head.Position - rootPart.Position).unit * 10  -- Tính toán vị trí camera ở phía sau nhân vật
+        camera.CFrame = CFrame.new(cameraPosition, head.Position)  -- Đặt CFrame để camera hướng về head
 
+        -- Start the loop for camera subject
         if toggleLoop then
-            toggleLoop:Disconnect()
+            toggleLoop:Disconnect()  -- Đảm bảo kết nối cũ được tắt đi nếu có
         end
         toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
             local npc = getClosestNPC()
             if npc and npc:FindFirstChild("Head") then
-                local head = npc:FindFirstChild("Head")
-                workspace.CurrentCamera.CFrame = CFrame.new(cameraPosition, head.Position)
+                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("Head")
             else
-                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("HumanoidRootPart")
+                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
             end
         end)
     else
+        -- Tắt aimbot: Quay lại góc nhìn thứ 1 và khóa lại
         if toggleLoop then
-            toggleLoop:Disconnect()
+            toggleLoop:Disconnect()  -- Ngắt kết nối để không tiếp tục theo dõi NPC
         end
-        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("HumanoidRootPart")
+        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
         player.CameraMode = Enum.CameraMode.LockFirstPerson
+
+        -- Đặt khoảng cách zoom của camera khi về lại góc nhìn thứ 1
         player.CameraMinZoomDistance = 0.5
         player.CameraMaxZoomDistance = 0.5
     end
