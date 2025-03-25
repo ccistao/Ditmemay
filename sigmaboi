@@ -193,7 +193,6 @@ buttonAimbot.MouseButton1Click:Connect(function()
             toggleLoop:Disconnect()  -- Ngắt kết nối để không tiếp tục theo dõi NPC
         end
         workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
-        player.CameraMode = Enum.CameraMode.LockFirstPerson
 
         -- Zoom lại về góc nhìn thứ 1
         if zoomBackIn(targetZoom) then
@@ -212,20 +211,35 @@ local Plr = Players.LocalPlayer
 local Clipon = false
 local Stepped
 
--- Chức năng Noclip
+-- Chức năng Noclip (chỉ bật va chạm ở thân khi tắt)
 buttonNoclip.MouseButton1Click:Connect(function()
     Clipon = not Clipon
     buttonNoclip.Text = Clipon and "Noclip: BẬT" or "Noclip: TẮT"
 
     if Clipon then
         Stepped = RunService.Stepped:Connect(function()
-            for _, v in pairs(Plr.Character:GetChildren()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = false
+            if Plr.Character then
+                for _, v in pairs(Plr.Character:GetChildren()) do
+                    if v:IsA("BasePart") then
+                        v.CanCollide = false
+                    end
                 end
+            else
+                -- Nếu nhân vật chết, tắt Noclip
+                Clipon = false
+                buttonNoclip.Text = "Noclip: TẮT"
+                if Stepped then Stepped:Disconnect() end
             end
         end)
     else
         if Stepped then Stepped:Disconnect() end
+        -- Chỉ bật va chạm ở thân khi tắt
+        if Plr.Character then
+            local rootPart = Plr.Character:FindFirstChild("HumanoidRootPart")
+            local torso = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("UpperTorso")
+
+            if rootPart then rootPart.CanCollide = true end
+            if torso then torso.CanCollide = true end
+        end
     end
 end)
