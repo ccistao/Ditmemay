@@ -82,13 +82,12 @@ OnLabel.Font = Enum.Font.SourceSansBold
 OnLabel.TextSize = 18
 OnLabel.AutoButtonColor = true -- Hiệu ứng khi nhấp
 
--- Xử lý sự kiện khi nhấn vào OnButton (chuyển đổi giữa ON và OFF)
-OnButton.MouseButton1Click:Connect(function()
+OnLabel.MouseButton1Click:Connect(function()
     S.Enabled = not S.Enabled -- Đảo trạng thái bật/tắt
 
     -- Cập nhật nhãn "ON" hoặc "OFF"
-    OnButton.Text = S.Enabled and "ON" or "OFF"
-    OnButton.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Cập nhật màu sắc
+    OnLabel.Text = S.Enabled and "ON" or "OFF"
+    OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0) -- Cập nhật màu sắc
 end)
 
 -- Update Range on Input Change
