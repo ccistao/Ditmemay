@@ -71,23 +71,24 @@ RangeInput.Font = Enum.Font.SourceSansBold
 RangeInput.TextSize = 18
 RangeInput.ClearTextOnFocus = false
 
--- Green "ON" Label (Nhấp vào để bật/tắt)
-OnLabel.Parent = Frame
-OnLabel.Position = UDim2.new(0, 10, 0, 95) -- Positioned below input
-OnLabel.Size = UDim2.new(0, 180, 0, 20)
-OnLabel.Text = S.Enabled and "ON" or "OFF"
-OnLabel.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Xanh lá cây nếu bật, đỏ nếu tắt
-OnLabel.BackgroundTransparency = 1
-OnLabel.Font = Enum.Font.SourceSansBold
-OnLabel.TextSize = 18
+-- Green "ON" Button (Nhấp vào để bật/tắt)
+local OnButton = Instance.new("TextButton") -- Đổi từ TextLabel sang TextButton
+OnButton.Parent = Frame
+OnButton.Position = UDim2.new(0, 10, 0, 95) -- Positioned below input
+OnButton.Size = UDim2.new(0, 180, 0, 20)
+OnButton.Text = S.Enabled and "ON" or "OFF"
+OnButton.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Xanh nếu bật, đỏ nếu tắt
+OnButton.BackgroundTransparency = 1
+OnButton.Font = Enum.Font.SourceSansBold
+OnButton.TextSize = 18
 
--- Xử lý sự kiện khi nhấn vào OnLabel (chuyển đổi giữa ON và OFF)
-OnLabel.MouseButton1Click:Connect(function()
+-- Xử lý sự kiện khi nhấn vào OnButton (chuyển đổi giữa ON và OFF)
+OnButton.MouseButton1Click:Connect(function()
     S.Enabled = not S.Enabled -- Đảo trạng thái bật/tắt
 
     -- Cập nhật nhãn "ON" hoặc "OFF"
-    OnLabel.Text = S.Enabled and "ON" or "OFF"
-    OnLabel.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Cập nhật màu sắc
+    OnButton.Text = S.Enabled and "ON" or "OFF"
+    OnButton.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Cập nhật màu sắc
 end)
 
 -- Update Range on Input Change
