@@ -1,245 +1,102 @@
--- dead rails wall hack aimbot.
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-player.CameraMode = Enum.CameraMode.Classic
-local runService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-local camera = workspace.CurrentCamera
- 
-StarterGui:SetCore("SendNotification", {
-    Title = "Code by zerodeptrai",
-    Text = "on Roblox",
-    Duration = 3
-})
-
-local Light = game:GetService("Lighting")
-
-function dofullbright()
-Light.Ambient = Color3.new(1, 1, 1)
-Light.ColorShift_Bottom = Color3.new(1, 1, 1)
-Light.ColorShift_Top = Color3.new(1, 1, 1)
-end
-
-dofullbright()
-
-Light.LightingChanged:Connect(dofullbright)
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "NPC_Lock_GUI"
-screenGui.Parent = game:GetService("CoreGui")
- 
--- Tạo nút NPC Lock
-local buttonAimbot = Instance.new("TextButton")
-buttonAimbot.Size = UDim2.new(0, 150, 0, 50)
-buttonAimbot.Position = UDim2.new(0.5, -75, 0.5, -25)
-buttonAimbot.BackgroundColor3 = Color3.new(0, 0, 0)
-buttonAimbot.TextColor3 = Color3.new(1, 1, 1)
-buttonAimbot.Text = "NPC Lock: TẮT"
-buttonAimbot.Font = Enum.Font.Fantasy
-buttonAimbot.TextScaled = true
-buttonAimbot.Parent = screenGui
-
--- Tạo nút Noclip
-local buttonNoclip = Instance.new("TextButton")
-buttonNoclip.Size = UDim2.new(0, 150, 0, 50)
-buttonNoclip.Position = UDim2.new(0.5, 85, 0.5, -25)
-buttonNoclip.BackgroundColor3 = Color3.new(0, 0, 0)
-buttonNoclip.TextColor3 = Color3.new(1, 1, 1)
-buttonNoclip.Text = "Noclip: TẮT"
-buttonNoclip.Font = Enum.Font.Fantasy
-buttonNoclip.TextScaled = true
-buttonNoclip.Parent = screenGui
-
--- Bo góc nút
-local function roundCorners(button)
-    local uicorner = Instance.new("UICorner")
-    uicorner.CornerRadius = UDim.new(0, 12)
-    uicorner.Parent = button
-end
-roundCorners(buttonAimbot)
-roundCorners(buttonNoclip)
-
--- Kéo thả cả 2 nút cùng nhau (đã sửa lỗi)
-local dragging, dragInput, dragStart, startPos
-local function update(input)
-    local delta = input.Position - dragStart
-    local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    buttonAimbot.Position = newPos
-    buttonNoclip.Position = UDim2.new(newPos.X.Scale, newPos.X.Offset + 160, newPos.Y.Scale, newPos.Y.Offset)
-end
-buttonAimbot.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = buttonAimbot.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+if not getgenv().AutoDribbleSettings then getgenv().AutoDribbleSettings={
+    Enabled = true,
+    range = 22
+}
     end
+local S,R,P,U=getgenv().AutoDribbleSettings,game:GetService"ReplicatedStorage",game:GetService"Players",game:GetService"RunService"
+local L=P.LocalPlayer or P.PlayerAdded:Wait() 
+local function initCharacter()
+    local C=L.Character or L.CharacterAdded:Wait()
+    local H=C:WaitForChild"HumanoidRootPart"
+    local M=C:WaitForChild"Humanoid"
+    return C,H,M
+end
+local C,H,M=initCharacter()
+L.CharacterAdded:Connect(function(newChar)
+    C,H,M=initCharacter() 
 end)
-buttonAimbot.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
+local B=R.Packages.Knit.Services.BallService.RE.Dribble
+local A=require(R.Assets.Animations)
+local G=function(s)if not A.Dribbles[s]then return nil end local I=Instance.new"Animation";I.AnimationId=A.Dribbles[s];return M and M:LoadAnimation(I)end
+local T=function(p)if p==L then return false end local c=p.Character;if not c then return false end local V=c.Values and c.Values.Sliding;if V and V.Value==true then return true end local h=c:FindFirstChildOfClass"Humanoid";if h and h.MoveDirection.Magnitude>0 and h.WalkSpeed==0 then return true end return false end
+local O=function(p)if not L.Team or not p.Team then return false end return L.Team~=p.Team end
+local D=function(d)if not S.Enabled or not C.Values.HasBall.Value then return end B:FireServer()local s=L.PlayerStats.Style.Value;local t=G(s);if t then t:Play();t:AdjustSpeed(math.clamp(1+(10-d)/10,1,2))end local F=workspace:FindFirstChild"Football";if F then F.AssemblyLinearVelocity=Vector3.new();F.CFrame=C.HumanoidRootPart.CFrame*CFrame.new(0,-2.5,0)end end
+U.Heartbeat:Connect(function()if not S.Enabled or not C or not H then return end for _,p in pairs(P:GetPlayers())do if O(p)and T(p)then local r=p.Character and p.Character:FindFirstChild"HumanoidRootPart";if r then local d=(r.Position-H.Position).Magnitude;if d<S.range then D(d);break end end end end end)
+-- GUI Code (Added at the End)
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local RangeLabel = Instance.new("TextLabel")
+local RangeInput = Instance.new("TextBox")
+local OnLabel = Instance.new("TextLabel") -- Green "ON" Label
+
+-- Parent GUI to PlayerGui
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Frame Properties
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.Size = UDim2.new(0, 200, 0, 120) -- Increased height for "ON" label
+Frame.Position = UDim2.new(0, 50, 0, 100)
+Frame.BorderSizePixel = 2
+Frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+
+-- Title
+Title.Parent = Frame
+Title.Text = "Legit Auto Dribble"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+
+-- Range Label
+RangeLabel.Parent = Frame
+RangeLabel.Position = UDim2.new(0, 10, 0, 40)
+RangeLabel.Size = UDim2.new(0, 180, 0, 20)
+RangeLabel.Text = "Range: " .. tostring(S.range)
+RangeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RangeLabel.BackgroundTransparency = 1
+RangeLabel.Font = Enum.Font.SourceSansBold
+RangeLabel.TextSize = 16
+
+-- Range Input
+RangeInput.Parent = Frame
+RangeInput.Position = UDim2.new(0, 10, 0, 60)
+RangeInput.Size = UDim2.new(0, 180, 0, 30)
+RangeInput.Text = tostring(S.range)
+RangeInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+RangeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+RangeInput.Font = Enum.Font.SourceSansBold
+RangeInput.TextSize = 18
+RangeInput.ClearTextOnFocus = false
+
+-- Green "ON" Label (Nhấp vào để bật/tắt)
+OnLabel.Parent = Frame
+OnLabel.Position = UDim2.new(0, 10, 0, 95) -- Positioned below input
+OnLabel.Size = UDim2.new(0, 180, 0, 20)
+OnLabel.Text = S.Enabled and "ON" or "OFF"
+OnLabel.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Xanh lá cây nếu bật, đỏ nếu tắt
+OnLabel.BackgroundTransparency = 1
+OnLabel.Font = Enum.Font.SourceSansBold
+OnLabel.TextSize = 18
+
+-- Xử lý sự kiện khi nhấn vào OnLabel (chuyển đổi giữa ON và OFF)
+OnLabel.MouseButton1Click:Connect(function()
+    S.Enabled = not S.Enabled -- Đảo trạng thái bật/tắt
+
+    -- Cập nhật nhãn "ON" hoặc "OFF"
+    OnLabel.Text = S.Enabled and "ON" or "OFF"
+    OnLabel.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Cập nhật màu sắc
 end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if dragging and input == dragInput then
-        update(input)
-    end
-end)
 
--- Hàm tìm NPC gần nhất
-local function getClosestNPC()
-    local closestNPC = nil
-    local closestDistance = math.huge
-
-    for _, object in ipairs(workspace:GetDescendants()) do
-        if object:IsA("Model") then
-            local humanoid = object:FindFirstChild("Humanoid") or object:FindFirstChildWhichIsA("Humanoid")
-            local hrp = object:FindFirstChild("Head") or object:FindFirstChild("HumanoidRootPart") or object.PrimaryPart
-            if humanoid and hrp and humanoid.Health > 0 and object.Name ~= "Horse" then
-                local isPlayer = false
-                for _, pl in ipairs(Players:GetPlayers()) do
-                    if pl.Character == object then
-                        isPlayer = true
-                        break
-                    end
-                end
-                if not isPlayer then
-                    local distance = (hrp.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                    if distance < closestDistance and distance <= 400 then
-                        closestDistance = distance
-                        closestNPC = object
-                    end
-                end
-            end
-        end
-    end
-
-    return closestNPC
-end
-
--- NPC Lock (sửa lỗi không hoạt động
-local npcLock = false
-local toggleLoop
-
-buttonAimbot.MouseButton1Click:Connect(function()
-    npcLock = not npcLock
-    buttonAimbot.Text = npcLock and "NPC Lock: BẬT" or "NPC Lock: TẮT"
-
-    if npcLock then
-        -- Bật aimbot: Chuyển sang góc nhìn thứ 3 và đảm bảo camera zoom ra
-        player.CameraMode = Enum.CameraMode.Classic
-        
-        -- Bắt đầu zoom từ từ ra góc nhìn thứ 3
-        local targetZoom = 10
-        local zoomSpeed = 0.2 -- Tốc độ zoom
-        local currentZoom = player.CameraMaxZoomDistance
-        
-        -- Hàm zoom ra
-        local function zoomInOut(target)
-            if math.abs(currentZoom - target) > 0.1 then
-                currentZoom = currentZoom + (target - currentZoom) * zoomSpeed
-                player.CameraMaxZoomDistance = currentZoom
-            else
-                player.CameraMaxZoomDistance = target
-                return true
-            end
-            return false
-        end
-        
-        -- Đảm bảo camera bắt đầu ở góc nhìn thứ 3
-        local rootPart = player.Character:WaitForChild("HumanoidRootPart")
-        camera.CFrame = CFrame.new(rootPart.Position + Vector3.new(0, 5, 10), rootPart.Position)
-
-        -- Start the loop for camera subject
-        if toggleLoop then
-            toggleLoop:Disconnect()  -- Đảm bảo kết nối cũ được tắt đi nếu có
-        end
-        toggleLoop = game:GetService("RunService").RenderStepped:Connect(function()
-            local npc = getClosestNPC()
-            if npc and npc:FindFirstChild("Head") then
-                workspace.CurrentCamera.CameraSubject = npc:FindFirstChild("Head")
-            else
-                workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
-            end
-            
-            -- Thực hiện zoom ra
-            if zoomInOut(targetZoom) then
-                toggleLoop:Disconnect() -- Khi zoom hoàn thành, ngừng chạy loop
-            end
-        end)
+-- Update Range on Input Change
+RangeInput.FocusLost:Connect(function()
+    local newRange = tonumber(RangeInput.Text)
+    if newRange and newRange > 0 then
+        S.range = newRange
+        RangeLabel.Text = "Range: " .. tostring(newRange)
     else
-        -- Zoom lại vào góc nhìn thứ 1
-        local targetZoom = 0.5
-        local currentZoom = player.CameraMaxZoomDistance
-
-        -- Hàm zoom vào góc nhìn thứ 1
-        local function zoomBackIn(target)
-            if math.abs(currentZoom - target) > 0.1 then
-                currentZoom = currentZoom + (target - currentZoom) * 0.2
-                player.CameraMaxZoomDistance = currentZoom
-            else
-                player.CameraMaxZoomDistance = target
-                return true
-            end
-            return false
-        end
-
-        -- Tắt aimbot: Quay lại góc nhìn thứ 1 và khóa lại
-        if toggleLoop then
-            toggleLoop:Disconnect()  -- Ngắt kết nối để không tiếp tục theo dõi NPC
-        end
-        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
-
-        -- Zoom lại về góc nhìn thứ 1
-        if zoomBackIn(targetZoom) then
-            player.CameraMinZoomDistance = 0.5
-            player.CameraMaxZoomDistance = 0.5
-        end
-    end
-end)
-
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Plr = Players.LocalPlayer
-
--- Biến trạng thái
-local Clipon = false
-local Stepped
-
--- Chức năng Noclip (chỉ bật va chạm ở thân khi tắt)
-buttonNoclip.MouseButton1Click:Connect(function()
-    Clipon = not Clipon
-    buttonNoclip.Text = Clipon and "Noclip: BẬT" or "Noclip: TẮT"
-
-    if Clipon then
-        Stepped = RunService.Stepped:Connect(function()
-            if Plr.Character then
-                for _, v in pairs(Plr.Character:GetChildren()) do
-                    if v:IsA("BasePart") then
-                        v.CanCollide = false
-                    end
-                end
-            else
-                -- Nếu nhân vật chết, tắt Noclip
-                Clipon = false
-                buttonNoclip.Text = "Noclip: TẮT"
-                if Stepped then Stepped:Disconnect() end
-            end
-        end)
-    else
-        if Stepped then Stepped:Disconnect() end
-        -- Chỉ bật va chạm ở thân khi tắt
-        if Plr.Character then
-            local rootPart = Plr.Character:FindFirstChild("HumanoidRootPart")
-            local torso = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("UpperTorso")
-
-            if rootPart then rootPart.CanCollide = true end
-            if torso then torso.CanCollide = true end
-        end
+        RangeInput.Text = tostring(S.range) -- Reset if invalid input
     end
 end)
