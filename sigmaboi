@@ -94,7 +94,7 @@ end)
 -- Update Range on Input Change
 RangeInput.FocusLost:Connect(function()
     local newRange = tonumber(RangeInput.Text)
-    if newRange and newRange > 0 then
+    if newRange and newRange >= 5 and newRange <= 100 then
         S.range = newRange
         RangeLabel.Text = "Range: " .. tostring(newRange)
     else
