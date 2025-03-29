@@ -82,6 +82,7 @@ OnLabel.Font = Enum.Font.SourceSansBold
 OnLabel.TextSize = 18
 OnLabel.AutoButtonColor = true -- Hiệu ứng khi nhấp
 
+task.wait(0.2)
 OnLabel.MouseButton1Click:Connect(function()
     S.Enabled = not S.Enabled -- Đảo trạng thái bật/tắt
 
