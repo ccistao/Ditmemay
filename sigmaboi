@@ -28,7 +28,7 @@ local Frame = Instance.new("Frame")
 local Title = Instance.new("TextLabel")
 local RangeLabel = Instance.new("TextLabel")
 local RangeInput = Instance.new("TextBox")
-local OnLabel = Instance.new("TextLabel") -- Green "ON" Label
+local OnLabel = Instance.new("TextButton") -- Green "ON" Label
 
 -- Parent GUI to PlayerGui
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -72,15 +72,15 @@ RangeInput.TextSize = 18
 RangeInput.ClearTextOnFocus = false
 
 -- Green "ON" Button (Nhấp vào để bật/tắt)
-local OnButton = Instance.new("TextButton") -- Đổi từ TextLabel sang TextButton
-OnButton.Parent = Frame
-OnButton.Position = UDim2.new(0, 10, 0, 95) -- Positioned below input
-OnButton.Size = UDim2.new(0, 180, 0, 20)
-OnButton.Text = S.Enabled and "ON" or "OFF"
-OnButton.TextColor3 = S.Enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0) -- Xanh nếu bật, đỏ nếu tắt
-OnButton.BackgroundTransparency = 1
-OnButton.Font = Enum.Font.SourceSansBold
-OnButton.TextSize = 18
+OnLabel.Parent = Frame
+OnLabel.Position = UDim2.new(0, 10, 0, 95) -- Dưới Input Box
+OnLabel.Size = UDim2.new(0, 180, 0, 30)
+OnLabel.Text = S.Enabled and "ON" or "OFF"
+OnLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Màu chữ trắng
+OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0) -- Xanh lá cây nếu bật, đỏ nếu tắt
+OnLabel.Font = Enum.Font.SourceSansBold
+OnLabel.TextSize = 18
+OnLabel.AutoButtonColor = true -- Hiệu ứng khi nhấp
 
 -- Xử lý sự kiện khi nhấn vào OnButton (chuyển đổi giữa ON và OFF)
 OnButton.MouseButton1Click:Connect(function()
