@@ -1,47 +1,65 @@
-if not getgenv().AutoDribbleSettings then getgenv().AutoDribbleSettings={
-    Enabled = true,
-    range = 22
-}
-    end
-local S,R,P,U=getgenv().AutoDribbleSettings,game:GetService"ReplicatedStorage",game:GetService"Players",game:GetService"RunService"
-local L=P.LocalPlayer or P.PlayerAdded:Wait() 
-local function initCharacter()
-    local C=L.Character or L.CharacterAdded:Wait()
-    local H=C:WaitForChild"HumanoidRootPart"
-    local M=C:WaitForChild"Humanoid"
-    return C,H,M
+if not getgenv().AutoDribbleSettings then 
+    getgenv().AutoDribbleSettings = {
+        Enabled = true,
+        range = 22
+    }
 end
-local C,H,M=initCharacter()
-L.CharacterAdded:Connect(function(newChar)
-    C,H,M=initCharacter() 
+
+local S, R, P, U = getgenv().AutoDribbleSettings, game:GetService("ReplicatedStorage"), game:GetService("Players"), game:GetService("RunService")
+local L = P.LocalPlayer or P.PlayerAdded:Wait()
+
+local function initCharacter()
+    local C = L.Character or L.CharacterAdded:Wait()
+    local H = C:WaitForChild("HumanoidRootPart")
+    local M = C:WaitForChild("Humanoid")
+    return C, H, M
+end
+
+local C, H, M = initCharacter()
+L.CharacterAdded:Connect(function()
+    C, H, M = initCharacter()
 end)
-local B=R.Packages.Knit.Services.BallService.RE.Dribble
-local A=require(R.Assets.Animations)
-local G=function(s)if not A.Dribbles[s]then return nil end local I=Instance.new"Animation";I.AnimationId=A.Dribbles[s];return M and M:LoadAnimation(I)end
-local T=function(p)if p==L then return false end local c=p.Character;if not c then return false end local V=c.Values and c.Values.Sliding;if V and V.Value==true then return true end local h=c:FindFirstChildOfClass"Humanoid";if h and h.MoveDirection.Magnitude>0 and h.WalkSpeed==0 then return true end return false end
-local O=function(p)if not L.Team or not p.Team then return false end return L.Team~=p.Team end
-local D=function(d)if not S.Enabled or not C.Values.HasBall.Value then return end B:FireServer()local s=L.PlayerStats.Style.Value;local t=G(s);if t then t:Play();t:AdjustSpeed(math.clamp(1+(10-d)/10,1,2))end local F=workspace:FindFirstChild"Football";if F then F.AssemblyLinearVelocity=Vector3.new();F.CFrame=C.HumanoidRootPart.CFrame*CFrame.new(0,-2.5,0)end end
-U.Heartbeat:Connect(function()if not S.Enabled or not C or not H then return end for _,p in pairs(P:GetPlayers())do if O(p)and T(p)then local r=p.Character and p.Character:FindFirstChild"HumanoidRootPart";if r then local d=(r.Position-H.Position).Magnitude;if d<S.range then D(d);break end end end end end)
--- GUI Code (Added at the End)
+
+-- Tạo GUI
 local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local RangeLabel = Instance.new("TextLabel")
-local RangeInput = Instance.new("TextBox")
-local OnLabel = Instance.new("TextButton") -- Green "ON" Label
-
--- Parent GUI to PlayerGui
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false -- Ngăn GUI bị mất khi respawn
 
--- Frame Properties
+local Frame = Instance.new("Frame")
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Frame.Size = UDim2.new(0, 200, 0, 120) -- Increased height for "ON" label
+Frame.Size = UDim2.new(0, 200, 0, 120)
 Frame.Position = UDim2.new(0, 50, 0, 100)
 Frame.BorderSizePixel = 2
 Frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+Frame.Active = true -- Cho phép nhận InputBegan để kéo
+
+-- Enable Dragging
+local dragging, dragStart, startPos
+local UIS = game:GetService("UserInputService")
+
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
 -- Title
+local Title = Instance.new("TextLabel")
 Title.Parent = Frame
 Title.Text = "Legit Auto Dribble"
 Title.Size = UDim2.new(1, 0, 0, 30)
@@ -51,6 +69,7 @@ Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 18
 
 -- Range Label
+local RangeLabel = Instance.new("TextLabel")
 RangeLabel.Parent = Frame
 RangeLabel.Position = UDim2.new(0, 10, 0, 40)
 RangeLabel.Size = UDim2.new(0, 180, 0, 20)
@@ -61,6 +80,7 @@ RangeLabel.Font = Enum.Font.SourceSansBold
 RangeLabel.TextSize = 16
 
 -- Range Input
+local RangeInput = Instance.new("TextBox")
 RangeInput.Parent = Frame
 RangeInput.Position = UDim2.new(0, 10, 0, 60)
 RangeInput.Size = UDim2.new(0, 180, 0, 30)
@@ -71,33 +91,32 @@ RangeInput.Font = Enum.Font.SourceSansBold
 RangeInput.TextSize = 18
 RangeInput.ClearTextOnFocus = false
 
--- Green "ON" Button (Nhấp vào để bật/tắt)
+-- Toggle Button
+local OnLabel = Instance.new("TextButton")
 OnLabel.Parent = Frame
-OnLabel.Position = UDim2.new(0, 10, 0, 95) -- Dưới Input Box
+OnLabel.Position = UDim2.new(0, 10, 0, 95)
 OnLabel.Size = UDim2.new(0, 180, 0, 30)
 OnLabel.Text = S.Enabled and "ON" or "OFF"
-OnLabel.TextColor3 = Color3.fromRGB(255, 255, 255) -- Màu chữ trắng
-OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0) -- Xanh lá cây nếu bật, đỏ nếu tắt
+OnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
 OnLabel.Font = Enum.Font.SourceSansBold
 OnLabel.TextSize = 18
-OnLabel.AutoButtonColor = true -- Hiệu ứng khi nhấp
+OnLabel.AutoButtonColor = true
 
-task.defer(function()
+-- Chức năng Toggle
 OnLabel.MouseButton1Click:Connect(function()
-    S.Enabled = not S.Enabled -- Đảo trạng thái bật/tắt
-
-    -- Cập nhật nhãn "ON" hoặc "OFF"
+    S.Enabled = not S.Enabled
     OnLabel.Text = S.Enabled and "ON" or "OFF"
-    OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0) -- Cập nhật màu sắc
+    OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
 end)
 
--- Update Range on Input Change
+-- Cập nhật phạm vi khi thay đổi Input
 RangeInput.FocusLost:Connect(function()
     local newRange = tonumber(RangeInput.Text)
     if newRange and newRange >= 5 and newRange <= 100 then
         S.range = newRange
         RangeLabel.Text = "Range: " .. tostring(newRange)
     else
-        RangeInput.Text = tostring(S.range) -- Reset if invalid input
+        RangeInput.Text = tostring(S.range)
     end
 end)
