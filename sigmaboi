@@ -1,122 +1,36 @@
-if not getgenv().AutoDribbleSettings then 
-    getgenv().AutoDribbleSettings = {
-        Enabled = true,
-        range = 22
-    }
+-- Tạo một ScreenGui và TextLabel để hiển thị FPS
+local player = game.Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
+
+local fpsLabel = Instance.new("TextLabel")
+fpsLabel.Size = UDim2.new(0, 100, 0, 50)
+fpsLabel.Position = UDim2.new(1, -110, 0, 10)
+fpsLabel.BackgroundTransparency = 1
+fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+fpsLabel.TextSize = 24
+fpsLabel.TextStrokeTransparency = 0.8
+fpsLabel.Parent = screenGui
+
+-- Hàm tính FPS
+local function updateFPS()
+    local lastTime = tick()
+    local frameCount = 0
+
+    while true do
+        local currentTime = tick()
+        frameCount = frameCount + 1
+
+        if currentTime - lastTime >= 1 then
+            local fps = frameCount
+            fpsLabel.Text = "FPS: " .. fps
+            frameCount = 0
+            lastTime = currentTime
+        end
+
+        wait(0.1) -- Cập nhật mỗi 0.1 giây để không làm quá tải
+    end
 end
 
-local S, R, P, U = getgenv().AutoDribbleSettings, game:GetService("ReplicatedStorage"), game:GetService("Players"), game:GetService("RunService")
-local L = P.LocalPlayer or P.PlayerAdded:Wait()
-
-local function initCharacter()
-    local C = L.Character or L.CharacterAdded:Wait()
-    local H = C:WaitForChild("HumanoidRootPart")
-    local M = C:WaitForChild("Humanoid")
-    return C, H, M
-end
-
-local C, H, M = initCharacter()
-L.CharacterAdded:Connect(function()
-    C, H, M = initCharacter()
-end)
-
--- Tạo GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false -- Ngăn GUI bị mất khi respawn
-
-local Frame = Instance.new("Frame")
-Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Frame.Size = UDim2.new(0, 200, 0, 120)
-Frame.Position = UDim2.new(0, 50, 0, 100)
-Frame.BorderSizePixel = 2
-Frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-Frame.Active = true -- Cho phép nhận InputBegan để kéo
-
--- Enable Dragging
-local dragging, dragStart, startPos
-local UIS = game:GetService("UserInputService")
-
-Frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = Frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- Title
-local Title = Instance.new("TextLabel")
-Title.Parent = Frame
-Title.Text = "Legit Auto Dribble"
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 18
-
--- Range Label
-local RangeLabel = Instance.new("TextLabel")
-RangeLabel.Parent = Frame
-RangeLabel.Position = UDim2.new(0, 10, 0, 40)
-RangeLabel.Size = UDim2.new(0, 180, 0, 20)
-RangeLabel.Text = "Range: " .. tostring(S.range)
-RangeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-RangeLabel.BackgroundTransparency = 1
-RangeLabel.Font = Enum.Font.SourceSansBold
-RangeLabel.TextSize = 16
-
--- Range Input
-local RangeInput = Instance.new("TextBox")
-RangeInput.Parent = Frame
-RangeInput.Position = UDim2.new(0, 10, 0, 60)
-RangeInput.Size = UDim2.new(0, 180, 0, 30)
-RangeInput.Text = tostring(S.range)
-RangeInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-RangeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-RangeInput.Font = Enum.Font.SourceSansBold
-RangeInput.TextSize = 18
-RangeInput.ClearTextOnFocus = false
-
--- Toggle Button
-local OnLabel = Instance.new("TextButton")
-OnLabel.Parent = Frame
-OnLabel.Position = UDim2.new(0, 10, 0, 95)
-OnLabel.Size = UDim2.new(0, 180, 0, 30)
-OnLabel.Text = S.Enabled and "ON" or "OFF"
-OnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
-OnLabel.Font = Enum.Font.SourceSansBold
-OnLabel.TextSize = 18
-OnLabel.AutoButtonColor = true
-
--- Chức năng Toggle
-OnLabel.MouseButton1Click:Connect(function()
-    S.Enabled = not S.Enabled
-    OnLabel.Text = S.Enabled and "ON" or "OFF"
-    OnLabel.BackgroundColor3 = S.Enabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
-end)
-
--- Cập nhật phạm vi khi thay đổi Input
-RangeInput.FocusLost:Connect(function()
-    local newRange = tonumber(RangeInput.Text)
-    if newRange and newRange >= 5 and newRange <= 100 then
-        S.range = newRange
-        RangeLabel.Text = "Range: " .. tostring(newRange)
-    else
-        RangeInput.Text = tostring(S.range)
-    end
-end)
+-- Bắt đầu tính FPS
+updateFPS()
