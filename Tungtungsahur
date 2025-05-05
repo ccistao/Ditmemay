@@ -2,7 +2,6 @@ local ESP_ENABLED = false
 local ESP_COLOR = Color3.fromRGB(255, 255, 0)
 local UPDATE_INTERVAL = 0.5
 local eggs = {}
-local maxDistance = 100  -- Mặc định là 100 studs, có thể thay đổi
 
 function createBillboard(obj)
     if obj:FindFirstChild("EggESP") then return end
@@ -19,7 +18,6 @@ function createBillboard(obj)
     label.TextColor3 = ESP_COLOR
     label.TextStrokeTransparency = 0.5
     label.TextScaled = true
-    label.Font = Enum.Font.SourceSansBold
 
     billboard.Parent = obj
     table.insert(eggs, billboard)
@@ -34,87 +32,58 @@ function clearESP()
     eggs = {}
 end
 
-function distanceFromPlayer(obj)
-    local player = game.Players.LocalPlayer
-    if player and obj.Parent and obj.Parent:IsA("Model") and obj.Parent.Name == player.Name then
-        return (obj.Position - player.Character.PrimaryPart.Position).Magnitude
-    end
-    return math.huge  -- Nếu không phải là đối tượng hợp lệ thì trả về vô cùng
-end
-
 function findEggs()
     if not ESP_ENABLED then return end
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name:lower():find("egg") then
-            local dist = distanceFromPlayer(obj)
-            if dist <= maxDistance then
-                createBillboard(obj)
-            end
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name:lower():find("egg") and not obj:FindFirstChild("EggESP") then
+            createBillboard(obj)
         end
     end
 end
 
--- GUI kéo được cả trên mobile & PC
+-- GUI
 local UIS = game:GetService("UserInputService")
-local dragging = false
-local dragStart, startPos
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "EggESP_GUI"
-gui.ResetOnSpawn = false
-gui.Parent = game.CoreGui
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "EggESP_GUI"
+ScreenGui.ResetOnSpawn = false
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 100)
-frame.Position = UDim2.new(0, 100, 0, 100)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-frame.Parent = gui
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 200, 0, 60)
+Frame.Position = UDim2.new(0, 100, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Parent = ScreenGui
 
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(1, 0, 0.3, 0)
-toggleBtn.Text = "ESP: OFF"
-toggleBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.Font = Enum.Font.SourceSansBold
-toggleBtn.TextScaled = true
-toggleBtn.Parent = frame
+local Toggle = Instance.new("TextButton", Frame)
+Toggle.Size = UDim2.new(1, 0, 1, 0)
+Toggle.Text = "ESP: OFF"
+Toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.Font = Enum.Font.SourceSansBold
+Toggle.TextScaled = true
 
-local distanceInput = Instance.new("TextBox")
-distanceInput.Size = UDim2.new(1, 0, 0.3, 0)
-distanceInput.Position = UDim2.new(0, 0, 0.3, 0)
-distanceInput.Text = tostring(maxDistance)
-distanceInput.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-distanceInput.TextColor3 = Color3.new(1, 1, 1)
-distanceInput.Font = Enum.Font.SourceSansBold
-distanceInput.TextScaled = true
-distanceInput.ClearTextOnFocus = false
-distanceInput.Parent = frame
-
--- Đổi khoảng cách khi nhập vào TextBox
-distanceInput.FocusLost:Connect(function()
-    local distance = tonumber(distanceInput.Text)
-    if distance then
-        maxDistance = distance
-    else
-        distanceInput.Text = tostring(maxDistance)
-    end
-end)
-
-toggleBtn.MouseButton1Click:Connect(function()
+Toggle.MouseButton1Click:Connect(function()
     ESP_ENABLED = not ESP_ENABLED
-    toggleBtn.Text = "ESP: " .. (ESP_ENABLED and "ON" or "OFF")
+    Toggle.Text = "ESP: " .. (ESP_ENABLED and "ON" or "OFF")
     if not ESP_ENABLED then
         clearESP()
     end
 end)
 
-frame.InputBegan:Connect(function(input)
+-- Kéo GUI (hỗ trợ chuột và cảm ứng)
+local dragging = false
+local dragStart, startPos
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+Frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = frame.Position
-
+        startPos = Frame.Position
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -123,22 +92,13 @@ frame.InputBegan:Connect(function(input)
     end
 end)
 
-frame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        if dragging then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end
-end)
-
 UIS.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        updateDrag(input)
     end
 end)
 
+-- Vòng lặp ESP
 while true do
     pcall(findEggs)
     wait(UPDATE_INTERVAL)
