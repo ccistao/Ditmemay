@@ -48,42 +48,38 @@ local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "EggESP_GUI"
 ScreenGui.ResetOnSpawn = false
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 200, 0, 60)
-Frame.Position = UDim2.new(0, 100, 0, 100)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Parent = ScreenGui
+local Button = Instance.new("TextButton")
+Button.Size = UDim2.new(0, 140, 0, 50)
+Button.Position = UDim2.new(0, 100, 0, 100)
+Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+Button.TextColor3 = Color3.new(1, 1, 1)
+Button.Font = Enum.Font.SourceSansBold
+Button.TextScaled = true
+Button.Text = "ESP: OFF"
+Button.Parent = ScreenGui
 
-local Toggle = Instance.new("TextButton", Frame)
-Toggle.Size = UDim2.new(1, 0, 1, 0)
-Toggle.Text = "ESP: OFF"
-Toggle.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-Toggle.TextColor3 = Color3.new(1, 1, 1)
-Toggle.Font = Enum.Font.SourceSansBold
-Toggle.TextScaled = true
-
-Toggle.MouseButton1Click:Connect(function()
+Button.MouseButton1Click:Connect(function()
     ESP_ENABLED = not ESP_ENABLED
-    Toggle.Text = "ESP: " .. (ESP_ENABLED and "ON" or "OFF")
+    Button.Text = "ESP: " .. (ESP_ENABLED and "ON" or "OFF")
     if not ESP_ENABLED then
         clearESP()
     end
 end)
 
--- Kéo nút (hỗ trợ cả chuột và cảm ứng)
+-- Kéo nút (hỗ trợ cảm ứng & chuột)
 local dragging = false
 local dragStart, startPos
 
 local function updateDrag(input)
     local delta = input.Position - dragStart
-    Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    Button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
-Frame.InputBegan:Connect(function(input)
+Button.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
-        startPos = Frame.Position
+        startPos = Button.Position
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
