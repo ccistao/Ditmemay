@@ -70,7 +70,7 @@ Toggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Kéo GUI (hỗ trợ chuột và cảm ứng)
+-- Kéo nút (hỗ trợ cả chuột và cảm ứng)
 local dragging = false
 local dragStart, startPos
 
