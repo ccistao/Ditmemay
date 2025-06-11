@@ -197,7 +197,7 @@ end
 task.spawn(function()
 	monitorRunnerCooldown()
 	while true do
-		task.wait(1)
+		task.wait(5)
 		if beast and not isStillBeast(beast) then
 			resetState()
 		end
