@@ -114,6 +114,62 @@ local function makeDraggable(guiObject)
 	end)
 end
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local beast = nil
+local foundBeast = false
+local cooldownStart = nil
+local usedRunner = false
+
+local function makeDraggable(guiObject)
+	local dragging = false
+	local dragStart, startPos
+
+	local function clampToScreen(pos)
+		local screenSize = workspace.CurrentCamera.ViewportSize
+		local guiSize = guiObject.AbsoluteSize
+
+		local x = math.clamp(pos.X.Offset, 0, screenSize.X - guiSize.X)
+		local y = math.clamp(pos.Y.Offset, 0, screenSize.Y - guiSize.Y)
+
+		return UDim2.new(0, x, 0, y)
+	end
+
+	local function update(input)
+		local delta = input.Position - dragStart
+		local newPos = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+		guiObject.Position = clampToScreen(newPos)
+	end
+
+	guiObject.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = guiObject.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			update(input)
+		end
+	end)
+end
+
 local function createCooldownUI()
 	local screenGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BeastCooldownUI")
 	if screenGui then
@@ -170,7 +226,7 @@ local function showBeastFoundBanner()
 
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
-	wait(2.8) -- hiện 2.8 giây
+	wait(2.8)
 	tweenOut:Play()
 	tweenOut.Completed:Wait()
 	gui:Destroy()
@@ -217,7 +273,7 @@ end
 task.spawn(function()
 	monitorRunnerCooldown()
 	while true do
-		task.wait(5) -- tìm beast mỗi 5 giây
+		task.wait(5)
 		if beast and not isStillBeast(beast) then
 			resetState()
 		end
