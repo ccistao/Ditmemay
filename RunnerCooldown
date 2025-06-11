@@ -48,7 +48,7 @@ do
 	fadeIn(mainText)
 	fadeIn(subText)
 
-	task.wait(6)
+	task.wait(5.5)
 
 	fadeOut(mainText)
 	fadeOut(subText)
