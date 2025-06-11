@@ -13,11 +13,12 @@ do
 	frame.BackgroundTransparency = 1
 	frame.Parent = gui
 
-	local function createText(text, position)
+	local function createText(text, yOffset)
 		local label = Instance.new("TextLabel")
 		label.Text = text
-		label.Size = UDim2.new(1, 0, 0, 50)
-		label.Position = position
+		label.Size = UDim2.new(0, 400, 0, 40)
+		label.Position = UDim2.new(0.5, 0, 0.5, yOffset)
+		label.AnchorPoint = Vector2.new(0.5, 0.5)
 		label.BackgroundTransparency = 1
 		label.TextColor3 = Color3.new(1, 1, 1)
 		label.TextStrokeTransparency = 0.2
@@ -25,15 +26,16 @@ do
 		label.TextScaled = true
 		label.Font = Enum.Font.GothamBold
 		label.TextTransparency = 1
+		label.TextWrapped = false
 		label.Parent = frame
 		return label
 	end
 
-	local mainText = createText("script made by zerodepchai", UDim2.new(0, 0, 0.45, 0))
-	local subText = createText("ver 2.0.3", UDim2.new(0, 0, 0.52, 0))
+	local mainText = createText("script made by zerodepchai", -25)
+	local subText = createText("ver 2.0.3", 19)
 
 	local function fadeIn(label)
-		local tween = TweenService:Create(label, TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
+		local tween = TweenService:Create(label, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
 		tween:Play()
 	end
 
@@ -45,12 +47,14 @@ do
 	fadeIn(mainText)
 	fadeIn(subText)
 
-	task.wait(2.5)
+	task.wait(6) -- Giữ chữ trong 6 giây
+
 	fadeOut(mainText)
 	fadeOut(subText)
+
 	task.wait(1.5)
 	gui:Destroy()
-	task.wait(1)
+	task.wait(2)
 end
 
 
