@@ -73,14 +73,25 @@ local function makeDraggable(guiObject)
 	local dragging = false
 	local dragStart, startPos
 
+	local function clampToScreen(pos)
+		local screenSize = workspace.CurrentCamera.ViewportSize
+		local guiSize = guiObject.AbsoluteSize
+
+		local x = math.clamp(pos.X.Offset, 0, screenSize.X - guiSize.X)
+		local y = math.clamp(pos.Y.Offset, 0, screenSize.Y - guiSize.Y)
+
+		return UDim2.new(0, x, 0, y)
+	end
+
 	local function update(input)
 		local delta = input.Position - dragStart
-		guiObject.Position = UDim2.new(
+		local newPos = UDim2.new(
 			startPos.X.Scale,
 			startPos.X.Offset + delta.X,
 			startPos.Y.Scale,
 			startPos.Y.Offset + delta.Y
 		)
+		guiObject.Position = clampToScreen(newPos)
 	end
 
 	guiObject.InputBegan:Connect(function(input)
