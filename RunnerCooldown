@@ -33,7 +33,7 @@ do
 	end
 
 	local mainText = createText("script made by zerodepchai", -35, 38)
-	local subText = createText("ver 2.0.3", 10, 26) -- lệch xuống dưới 70px (giữ khoảng cách thoáng)
+	local subText = createText("ver 2.1.5", 10, 26) -- lệch xuống dưới 70px (giữ khoảng cách thoáng)
 
 	local function fadeIn(label)
 		local tween = TweenService:Create(label, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
@@ -73,16 +73,6 @@ local function makeDraggable(guiObject)
 	local dragging = false
 	local dragStart, startPos
 
-	local function clampToScreen(pos)
-		local screenSize = workspace.CurrentCamera.ViewportSize
-		local guiSize = guiObject.AbsoluteSize
-
-		local x = math.clamp(pos.X.Offset, 0, screenSize.X - guiSize.X)
-		local y = math.clamp(pos.Y.Offset, 0, screenSize.Y - guiSize.Y)
-
-		return UDim2.new(0, x, 0, y)
-	end
-
 	local function update(input)
 		local delta = input.Position - dragStart
 		local newPos = UDim2.new(
@@ -91,63 +81,7 @@ local function makeDraggable(guiObject)
 			startPos.Y.Scale,
 			startPos.Y.Offset + delta.Y
 		)
-		guiObject.Position = clampToScreen(newPos)
-	end
-
-	guiObject.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = guiObject.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			update(input)
-		end
-	end)
-end
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-
-local LocalPlayer = Players.LocalPlayer
-local beast = nil
-local foundBeast = false
-local cooldownStart = nil
-local usedRunner = false
-
-local function makeDraggable(guiObject)
-	local dragging = false
-	local dragStart, startPos
-
-	local function clampToScreen(pos)
-		local screenSize = workspace.CurrentCamera.ViewportSize
-		local guiSize = guiObject.AbsoluteSize
-
-		local x = math.clamp(pos.X.Offset, 0, screenSize.X - guiSize.X)
-		local y = math.clamp(pos.Y.Offset, 0, screenSize.Y - guiSize.Y)
-
-		return UDim2.new(0, x, 0, y)
-	end
-
-	local function update(input)
-		local delta = input.Position - dragStart
-		local newPos = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-		guiObject.Position = clampToScreen(newPos)
+		guiObject.Position = newPos
 	end
 
 	guiObject.InputBegan:Connect(function(input)
@@ -183,8 +117,8 @@ local function createCooldownUI()
 
 	local frame = Instance.new("Frame")
 	frame.Name = "CooldownLabel"
-	frame.Size = UDim2.new(0, 200, 0, 50)
-	frame.Position = UDim2.new(0.5, -100, 0, 50)
+	frame.Size = UDim2.new(0, 180, 0, 40)
+	frame.Position = UDim2.new(1, -190, 0, 10)
 	frame.BackgroundTransparency = 0.3
 	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	frame.BorderSizePixel = 0
@@ -196,7 +130,7 @@ local function createCooldownUI()
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
-	label.Text = "Cooldown: ..."
+	label.Text = "Cooldown: Chưa sài"
 	label.Parent = frame
 
 	makeDraggable(frame)
@@ -219,14 +153,12 @@ local function showBeastFoundBanner()
 	label.Text = "Đã tìm thấy Beast !!!"
 	label.Parent = gui
 
-	makeDraggable(label)
-
 	local tweenIn = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, -260, 0, 10) })
 	local tweenOut = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, 10, 0, 10) })
 
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
-	wait(2.8)
+	task.wait(2.5)
 	tweenOut:Play()
 	tweenOut.Completed:Wait()
 	gui:Destroy()
@@ -249,22 +181,27 @@ end
 local function monitorRunnerCooldown()
 	local label = createCooldownUI()
 	RunService.RenderStepped:Connect(function()
-		if beast and beast.Character and beast.Character:FindFirstChild("Humanoid") then
-			local speed = beast.Character.Humanoid.WalkSpeed
-			if speed > 19 then
-				usedRunner = true
-			elseif usedRunner and speed <= 19 and not cooldownStart then
-				cooldownStart = tick()
-			end
+		if not foundBeast or not beast or not beast.Character then return end
 
-			if cooldownStart then
-				local remaining = math.max(0, 22 - (tick() - cooldownStart))
+		local humanoid = beast.Character:FindFirstChild("Humanoid")
+		if not humanoid then return end
+
+		local speed = humanoid.WalkSpeed
+		if speed > 19 then
+			usedRunner = true
+			label.Text = "Cooldown: Đang sài"
+		elseif usedRunner and speed <= 19 and not cooldownStart then
+			cooldownStart = tick()
+		end
+
+		if cooldownStart then
+			local remaining = math.max(0, 22 - (tick() - cooldownStart))
+			if remaining > 0 then
 				label.Text = string.format("Cooldown: %.1fs", remaining)
-				if remaining <= 0 then
-					cooldownStart = nil
-					usedRunner = false
-					label.Text = "Cooldown: Ready"
-				end
+			else
+				cooldownStart = nil
+				usedRunner = false
+				label.Text = "Cooldown: Đã hồi"
 			end
 		end
 	end)
