@@ -58,188 +58,160 @@ do
 	task.wait(1)
 end
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players") local RunService = game:GetService("RunService") local UserInputService = game:GetService("UserInputService") local TweenService = game:GetService("TweenService")
 
-local LocalPlayer = Players.LocalPlayer
-local beast = nil
-local foundBeast = false
-local cooldownStart = nil
-local usedRunner = false
-local runnerBannerShown = false -- Thêm biến này để chống spam banner
+local LocalPlayer = Players.LocalPlayer local beast = nil local foundBeast = false local cooldownStart = nil local usedRunner = false
 
-local function makeDraggable(guiObject)
-	local dragging = false
-	local dragStart, startPos
+local function makeDraggable(guiObject) local dragging = false local dragStart, startPos
 
-	local function update(input)
-		local delta = input.Position - dragStart
-		local newPos = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-		guiObject.Position = newPos
-	end
-
-	guiObject.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = guiObject.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			update(input)
-		end
-	end)
+local function update(input)
+	local delta = input.Position - dragStart
+	local newPos = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+	guiObject.Position = newPos
 end
 
-local function createCooldownUI()
-	local screenGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BeastCooldownUI")
-	if screenGui then
-		return screenGui:FindFirstChild("CooldownLabel"):FindFirstChildOfClass("TextLabel")
-	end
-
-	screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "BeastCooldownUI"
-	screenGui.ResetOnSpawn = false
-	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-	local frame = Instance.new("Frame")
-	frame.Name = "CooldownLabel"
-	frame.Size = UDim2.new(0, 180, 0, 40)
-	frame.Position = UDim2.new(1, -190, 0, 10)
-	frame.BackgroundTransparency = 0.3
-	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	frame.BorderSizePixel = 0
-	frame.Parent = screenGui
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Font = Enum.Font.SourceSansBold
-	label.TextScaled = true
-	label.Text = "Cooldown: Chưa sài"
-	label.Parent = frame
-
-	makeDraggable(frame)
-	return label
-end
-
-local function showBanner(text)
-	local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-	gui.Name = "Banner_" .. tostring(math.random(1, 999999))
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0, 250, 0, 40)
-	label.Position = UDim2.new(1, 10, 0, 10)
-	label.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Font = Enum.Font.SourceSansBold
-	label.TextScaled = true
-	label.Text = text
-	label.Parent = gui
-
-	makeDraggable(label)
-
-	local tweenIn = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, -260, 0, 10) })
-	local tweenOut = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, 10, 0, 10) })
-
-	tweenIn:Play()
-	tweenIn.Completed:Wait()
-	task.wait(2.8)
-	tweenOut:Play()
-	tweenOut.Completed:Wait()
-	gui:Destroy()
-end
-
-local function isStillBeast(player)
-	local stats = player:FindFirstChild("TempPlayerStatsModule")
-	if not stats then return false end
-	local isBeast = stats:FindFirstChild("IsBeast")
-	return isBeast and isBeast:IsA("BoolValue") and isBeast.Value
-end
-
-local function resetState()
-	beast = nil
-	foundBeast = false
-	cooldownStart = nil
-	usedRunner = false
-	runnerBannerShown = false -- reset luôn banner khi Beast đổi
-end
-
-local function monitorRunnerCooldown()
-	local label = createCooldownUI()
-	RunService.RenderStepped:Connect(function()
-		if not foundBeast or not beast or not beast.Character then return end
-
-		local humanoid = beast.Character:FindFirstChild("Humanoid")
-		if not humanoid then return end
-
-		local speed = humanoid.WalkSpeed
-
-		if speed > 19 then
-			if not usedRunner then
-				usedRunner = true
-				if not runnerBannerShown then
-					runnerBannerShown = true
-					showBanner("Beast đang sài runner !!!")
-				end
+guiObject.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = guiObject.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
 			end
-			label.Text = "Cooldown: Đang sài"
-		elseif usedRunner and speed >= 16 and speed <= 19 and not cooldownStart then
-			cooldownStart = tick()
-		end
+		end)
+	end
+end)
 
-		if cooldownStart then
-			local remaining = math.max(0, 22 - (tick() - cooldownStart))
-			if remaining > 0 then
-				label.Text = string.format("Cooldown: %.1fs", remaining)
-			else
-				cooldownStart = nil
-				usedRunner = false
-				runnerBannerShown = false -- cho phép hiện lại banner runner sau khi hồi
-				label.Text = "Cooldown: Đã hồi"
-			end
-		end
-	end)
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		update(input)
+	end
+end)
+
 end
+
+local function createCooldownUI() local screenGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BeastCooldownUI") if screenGui then return screenGui:FindFirstChild("CooldownLabel"):FindFirstChildOfClass("TextLabel") end
+
+screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BeastCooldownUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Name = "CooldownLabel"
+frame.Size = UDim2.new(0, 180, 0, 40)
+frame.Position = UDim2.new(1, -190, 0, 10)
+frame.BackgroundTransparency = 0.3
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, 0, 1, 0)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.new(1, 1, 1)
+label.Font = Enum.Font.SourceSansBold
+label.TextScaled = true
+label.Text = "Cooldown: Chưa sài"
+label.Parent = frame
+
+makeDraggable(frame)
+return label
+
+end
+
+local function showBanner(text) local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui")) gui.Name = "Banner_" .. tostring(math.random(1, 999999))
+
+local outerFrame = Instance.new("Frame")
+outerFrame.Size = UDim2.new(0, 260, 0, 50)
+outerFrame.Position = UDim2.new(1, 10, 0, 10)
+outerFrame.BackgroundTransparency = 1
+outerFrame.BorderSizePixel = 4
+outerFrame.BorderColor3 = Color3.new(1, 0, 0)
+outerFrame.Parent = gui
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -10, 1, -10)
+label.Position = UDim2.new(0, 5, 0, 5)
+label.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+label.TextColor3 = Color3.new(1, 1, 1)
+label.Font = Enum.Font.SourceSansBold
+label.TextScaled = true
+label.Text = text
+label.Parent = outerFrame
+
+makeDraggable(label)
+
+local tweenIn = TweenService:Create(outerFrame, TweenInfo.new(0.5), { Position = UDim2.new(1, -280, 0, 10) })
+tweenIn:Play()
+tweenIn.Completed:Wait()
+
+local hue = 0
+local runningRainbow = true
+task.spawn(function()
+	while runningRainbow do
+		hue = (hue + 0.01) % 1
+		outerFrame.BorderColor3 = Color3.fromHSV(hue, 1, 1)
+		task.wait(0.05)
+	end
+end)
 
 task.spawn(function()
-	monitorRunnerCooldown()
-	while true do
-		task.wait(5)
-		if beast and not isStillBeast(beast) then
-			resetState()
+	for i = 1, 15 do
+		local offsetX = math.random(-3, 3)
+		local offsetY = math.random(-2, 2)
+		outerFrame.Position = UDim2.new(1, -280 + offsetX, 0, 10 + offsetY)
+		task.wait(0.05)
+	end
+	outerFrame.Position = UDim2.new(1, -280, 0, 10)
+end)
+
+task.wait(2.8)
+local tweenOut = TweenService:Create(outerFrame, TweenInfo.new(0.5), { Position = UDim2.new(1, 10, 0, 10) })
+tweenOut:Play()
+tweenOut.Completed:Wait()
+
+runningRainbow = false
+gui:Destroy()
+
+end
+
+local function isStillBeast(player) local stats = player:FindFirstChild("TempPlayerStatsModule") if not stats then return false end local isBeast = stats:FindFirstChild("IsBeast") return isBeast and isBeast:IsA("BoolValue") and isBeast.Value end
+
+local function resetState() beast = nil foundBeast = false cooldownStart = nil usedRunner = false end
+
+local function monitorRunnerCooldown() local label = createCooldownUI() RunService.RenderStepped:Connect(function() if not foundBeast or not beast or not beast.Character then return end local humanoid = beast.Character:FindFirstChild("Humanoid") if not humanoid then return end local speed = humanoid.WalkSpeed
+
+if speed > 19 then
+		if not usedRunner then
+			showBanner("Beast đang sài runner !!!")
 		end
-		if not foundBeast then
-			local newBeast = nil
-			for _, player in ipairs(Players:GetPlayers()) do
-				if isStillBeast(player) then
-					newBeast = player
-					break
-				end
-			end
-			if newBeast then
-				beast = newBeast
-				foundBeast = true
-				showBanner("Đã tìm thấy Beast !!!")
-			else
-				print("❌ Không tìm thấy Beast!")
-			end
+		usedRunner = true
+		label.Text = "Cooldown: Đang sài"
+	elseif usedRunner and speed >= 16 and speed <= 19 and not cooldownStart then
+		cooldownStart = tick()
+	end
+
+	if cooldownStart then
+		local remaining = math.max(0, 22 - (tick() - cooldownStart))
+		if remaining > 0 then
+			label.Text = string.format("Cooldown: %.1fs", remaining)
+		else
+			cooldownStart = nil
+			usedRunner = false
+			label.Text = "Cooldown: Đã hồi"
 		end
 	end
 end)
+
+end
+
+task.spawn(function() monitorRunnerCooldown() while true do task.wait(5) if beast and not isStillBeast(beast) then resetState() end if not foundBeast then local newBeast = nil for _, player in ipairs(Players:GetPlayers()) do if isStillBeast(player) then newBeast = player break end end if newBeast then beast = newBeast foundBeast = true showBanner("Đã tìm thấy Beast !!!") else print("❌ Không tìm thấy Beast!") end end end end)
+
