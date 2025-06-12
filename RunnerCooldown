@@ -68,6 +68,7 @@ local beast = nil
 local foundBeast = false
 local cooldownStart = nil
 local usedRunner = false
+local runnerBannerShown = false -- Thêm biến này để chống spam banner
 
 local function makeDraggable(guiObject)
 	local dragging = false
@@ -177,6 +178,7 @@ local function resetState()
 	foundBeast = false
 	cooldownStart = nil
 	usedRunner = false
+	runnerBannerShown = false -- reset luôn banner khi Beast đổi
 end
 
 local function monitorRunnerCooldown()
@@ -191,9 +193,12 @@ local function monitorRunnerCooldown()
 
 		if speed > 19 then
 			if not usedRunner then
-				showBanner("Beast đang sài runner !!!")
+				usedRunner = true
+				if not runnerBannerShown then
+					runnerBannerShown = true
+					showBanner("Beast đang sài runner !!!")
+				end
 			end
-			usedRunner = true
 			label.Text = "Cooldown: Đang sài"
 		elseif usedRunner and speed >= 16 and speed <= 19 and not cooldownStart then
 			cooldownStart = tick()
@@ -206,6 +211,7 @@ local function monitorRunnerCooldown()
 			else
 				cooldownStart = nil
 				usedRunner = false
+				runnerBannerShown = false -- cho phép hiện lại banner runner sau khi hồi
 				label.Text = "Cooldown: Đã hồi"
 			end
 		end
