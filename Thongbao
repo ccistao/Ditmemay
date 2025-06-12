@@ -1,0 +1,99 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local beast = nil
+local lastQ = false
+
+-- Tạo viền bảy màu
+local function createRainbowBorder(frame)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+		ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 127, 0)),
+		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+		ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(75, 0, 130)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(148, 0, 211)),
+	})
+	gradient.Rotation = 0
+	gradient.Parent = frame
+
+	RunService.RenderStepped:Connect(function()
+		gradient.Rotation = (gradient.Rotation + 1) % 360
+	end)
+end
+
+-- Tạo banner thông báo
+local function showRunnerUsedBanner()
+	if LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("RunnerUsedBanner") then return end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "RunnerUsedBanner"
+	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0, 250, 0, 40)
+	label.Position = UDim2.new(1, 10, 0, 10)
+	label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Font = Enum.Font.SourceSansBold
+	label.TextScaled = true
+	label.Text = "Beast đã dùng Q (Runner) !!!"
+	label.Parent = gui
+
+	createRainbowBorder(label)
+
+	-- Rung nhẹ
+	local originalPos = label.Position
+	for i = 4, 25 do
+		local offset = UDim2.new(0, math.random(-4, 4), 0, math.random(-2, 2))
+		label.Position = originalPos + offset
+		task.wait(0.03)
+	end
+	label.Position = originalPos
+
+	-- Hiệu ứng trượt vào
+	local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, -270, 0, 10) })
+	local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, 10, 0, 10) })
+
+	tweenIn:Play()
+	tweenIn.Completed:Wait()
+	task.wait(2.5)
+	tweenOut:Play()
+	tweenOut.Completed:Wait()
+	gui:Destroy()
+end
+
+-- Kiểm tra Beast hiện tại
+local function getCurrentBeast()
+	for _, player in ipairs(Players:GetPlayers()) do
+		local stats = player:FindFirstChild("TempPlayerStatsModule")
+		if stats and stats:FindFirstChild("IsBeast") and stats.IsBeast.Value then
+			return player
+		end
+	end
+	return nil
+end
+
+-- Theo dõi runner
+task.spawn(function()
+	while true do
+		beast = getCurrentBeast()
+		if beast and beast.Character then
+			local humanoid = beast.Character:FindFirstChild("Humanoid")
+			if humanoid then
+				local speed = humanoid.WalkSpeed
+				if speed > 19 and not lastQ then
+					lastQ = true
+					showRunnerUsedBanner()
+				elseif speed <= 19 then
+					lastQ = false
+				end
+			end
+		end
+		task.wait(0.2)
+	end
+end)
