@@ -33,7 +33,7 @@ do
 	end
 
 	local mainText = createText("script made by zerodepchai", -35, 38)
-	local subText = createText("ver 2.1.5", 10, 26) -- lệch xuống dưới 70px (giữ khoảng cách thoáng)
+	local subText = createText("ver 2.3.1", 10, 26) -- lệch xuống dưới 70px (giữ khoảng cách thoáng)
 
 	local function fadeIn(label)
 		local tween = TweenService:Create(label, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
