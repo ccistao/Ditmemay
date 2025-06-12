@@ -113,6 +113,7 @@ local function createCooldownUI()
 	screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "BeastCooldownUI"
 	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 	local frame = Instance.new("Frame")
@@ -137,11 +138,9 @@ local function createCooldownUI()
 	return label
 end
 
-local function showBeastFoundBanner()
-	if LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("BeastBanner") then return end
-
+local function showBanner(text)
 	local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-	gui.Name = "BeastBanner"
+	gui.Name = "Banner_" .. tostring(math.random(1, 999999))
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(0, 250, 0, 40)
@@ -150,15 +149,17 @@ local function showBeastFoundBanner()
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
-	label.Text = "Đã tìm thấy Beast !!!"
+	label.Text = text
 	label.Parent = gui
+
+	makeDraggable(label)
 
 	local tweenIn = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, -260, 0, 10) })
 	local tweenOut = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, 10, 0, 10) })
 
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
-	task.wait(2.5)
+	task.wait(2.8)
 	tweenOut:Play()
 	tweenOut.Completed:Wait()
 	gui:Destroy()
@@ -187,10 +188,14 @@ local function monitorRunnerCooldown()
 		if not humanoid then return end
 
 		local speed = humanoid.WalkSpeed
+
 		if speed > 19 then
+			if not usedRunner then
+				showBanner("Beast đang sài runner !!!")
+			end
 			usedRunner = true
 			label.Text = "Cooldown: Đang sài"
-		elseif usedRunner and speed <= 19 and not cooldownStart then
+		elseif usedRunner and speed >= 16 and speed <= 19 and not cooldownStart then
 			cooldownStart = tick()
 		end
 
@@ -225,7 +230,7 @@ task.spawn(function()
 			if newBeast then
 				beast = newBeast
 				foundBeast = true
-				showBeastFoundBanner()
+				showBanner("Đã tìm thấy Beast !!!")
 			else
 				print("❌ Không tìm thấy Beast!")
 			end
