@@ -61,7 +61,7 @@ local function showRunnerUsedBanner()
 
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
-	task.wait(3)
+	task.wait(3.4)
 	tweenOut:Play()
 	tweenOut.Completed:Wait()
 	gui:Destroy()
