@@ -55,7 +55,7 @@ do
 
 	task.wait(1.5)
 	gui:Destroy()
-	task.wait(1)
+	task.wait(0.3)
 end
 
 local Players = game:GetService("Players")
