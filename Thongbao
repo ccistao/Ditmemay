@@ -46,15 +46,6 @@ local function showRunnerUsedBanner()
 
 	createRainbowBorder(label)
 
-	-- Rung nhẹ
-	local originalPos = label.Position
-	for i = 4, 25 do
-		local offset = UDim2.new(0, math.random(-4, 4), 0, math.random(-2, 2))
-		label.Position = originalPos + offset
-		task.wait(0.03)
-	end
-	label.Position = originalPos
-
 	-- Hiệu ứng trượt vào
 	local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, -270, 0, 10) })
 	local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, 10, 0, 10) })
@@ -94,6 +85,6 @@ task.spawn(function()
 				end
 			end
 		end
-		task.wait(0.2)
+		task.wait(0.05)
 	end
 end)
