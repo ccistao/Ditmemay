@@ -3,10 +3,21 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+local oldBanner = PlayerGui:FindFirstChild("RunnerUsedBanner")
+if oldBanner then
+	oldBanner:Destroy()
+end
+
+if _G.RunnerUsedConnection then
+	_G.RunnerUsedConnection:Disconnect()
+	_G.RunnerUsedConnection = nil
+end
+
 local beast = nil
 local lastQ = false
 
--- Tạo viền bảy màu
 local function createRainbowBorder(frame)
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
@@ -21,18 +32,15 @@ local function createRainbowBorder(frame)
 	gradient.Rotation = 0
 	gradient.Parent = frame
 
-	RunService.RenderStepped:Connect(function()
+	_G.RunnerUsedConnection = RunService.RenderStepped:Connect(function()
 		gradient.Rotation = (gradient.Rotation + 1) % 360
 	end)
 end
 
--- Tạo banner thông báo
 local function showRunnerUsedBanner()
-	if LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("RunnerUsedBanner") then return end
-
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "RunnerUsedBanner"
-	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+	gui.Parent = PlayerGui
 
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(0, 250, 0, 40)
@@ -46,7 +54,6 @@ local function showRunnerUsedBanner()
 
 	createRainbowBorder(label)
 
-	-- Hiệu ứng trượt vào
 	local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, -270, 0, 10) })
 	local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, 10, 0, 10) })
 
@@ -58,7 +65,6 @@ local function showRunnerUsedBanner()
 	gui:Destroy()
 end
 
--- Kiểm tra Beast hiện tại
 local function getCurrentBeast()
 	for _, player in ipairs(Players:GetPlayers()) do
 		local stats = player:FindFirstChild("TempPlayerStatsModule")
@@ -69,7 +75,6 @@ local function getCurrentBeast()
 	return nil
 end
 
--- Theo dõi runner
 task.spawn(function()
 	while true do
 		beast = getCurrentBeast()
