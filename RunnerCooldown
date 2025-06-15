@@ -63,9 +63,7 @@ wait(0.5)
 
 for _, name in ipairs({"BeastCooldownUI", "BeastBanner"}) do
 	local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild(name)
-	if gui then
-		gui:Destroy()
-	end
+	if gui then gui:Destroy() end
 end
 
 local Players = game:GetService("Players")
@@ -78,16 +76,15 @@ local beast = nil
 local foundBeast = false
 local cooldownStart = nil
 local usedRunner = false
+local monitoring = false
 
 local function makeDraggable(guiObject)
 	local dragging, dragStart, startPos = false, nil, nil
-
 	guiObject.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
 			dragStart = input.Position
 			startPos = guiObject.Position
-
 			input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragging = false
@@ -95,7 +92,6 @@ local function makeDraggable(guiObject)
 			end)
 		end
 	end)
-
 	UserInputService.InputChanged:Connect(function(input)
 		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local delta = input.Position - dragStart
@@ -110,12 +106,10 @@ end
 local function createCooldownUI()
 	local screenGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BeastCooldownUI")
 	if screenGui then return screenGui:FindFirstChild("CooldownLabel"):FindFirstChildOfClass("TextLabel") end
-
 	screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "BeastCooldownUI"
 	screenGui.ResetOnSpawn = false
 	screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
 	local frame = Instance.new("Frame")
 	frame.Name = "CooldownLabel"
 	frame.Size = UDim2.new(0, 180, 0, 40)
@@ -124,7 +118,6 @@ local function createCooldownUI()
 	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	frame.BorderSizePixel = 0
 	frame.Parent = screenGui
-
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, 0, 1, 0)
 	label.BackgroundTransparency = 1
@@ -133,18 +126,15 @@ local function createCooldownUI()
 	label.TextScaled = true
 	label.Text = "Cooldown: Chưa sài"
 	label.Parent = frame
-
 	makeDraggable(frame)
 	return label
 end
 
 local function showBeastFoundBanner()
 	if LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("BeastBanner") then return end
-
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "BeastBanner"
 	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(0, 250, 0, 40)
 	label.Position = UDim2.new(1, 10, 0, 10)
@@ -155,12 +145,9 @@ local function showBeastFoundBanner()
 	label.Text = "Đã tìm thấy Beast !!!"
 	label.BorderSizePixel = 2
 	label.Parent = gui
-
 	makeDraggable(label)
-
 	local tweenIn = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, -260, 0, 10) })
 	local tweenOut = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, 10, 0, 10) })
-
 	local colors = {
 		Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 128, 0),
 		Color3.fromRGB(255, 255, 0), Color3.fromRGB(0, 255, 0),
@@ -177,7 +164,6 @@ local function showBeastFoundBanner()
 		label.BorderColor3 = colors[index]
 		index = index % #colors + 1
 	end)
-
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
 	task.wait(2.5)
@@ -202,29 +188,27 @@ local function resetState()
 end
 
 local function monitorRunnerCooldown()
+	if monitoring then return end
+	monitoring = true
 	local label = createCooldownUI()
-
 	local lastCheck = 0
 	local minInterval = 1 / 40
-
 	RunService.Heartbeat:Connect(function(dt)
-		local fps = 1 / dt
 		local now = tick()
+		local fps = 1 / dt
 		if fps >= 65 or (now - lastCheck) >= minInterval then
 			lastCheck = now
-
 			if not foundBeast or not beast or not beast.Character then return end
 			local humanoid = beast.Character:FindFirstChild("Humanoid")
 			if not humanoid then return end
-
 			local speed = humanoid.WalkSpeed
 			if speed > 19 then
 				usedRunner = true
+				cooldownStart = nil
 				label.Text = "Cooldown: Đang sài"
 			elseif usedRunner and speed >= 16 and speed <= 19 and not cooldownStart then
 				cooldownStart = tick()
 			end
-
 			if cooldownStart then
 				local remaining = math.max(0, 22 - (tick() - cooldownStart))
 				if remaining > 0 then
@@ -240,14 +224,12 @@ local function monitorRunnerCooldown()
 end
 
 monitorRunnerCooldown()
-
 task.spawn(function()
 	while true do
 		task.wait(5)
 		if beast and not isStillBeast(beast) then
 			resetState()
 		end
-
 		if not foundBeast then
 			local newBeast = nil
 			for _, player in ipairs(Players:GetPlayers()) do
@@ -256,7 +238,6 @@ task.spawn(function()
 					break
 				end
 			end
-
 			if newBeast then
 				beast = newBeast
 				foundBeast = true
