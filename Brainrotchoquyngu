@@ -1,14 +1,9 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local screenGui
-local openButton
-local shiftButton
-local toolFrame
-local UIListLayout
+local screenGui, openButton, shiftButton, toolFrame, UIListLayout
 
 local function setupGUI()
 	if screenGui then screenGui:Destroy() end
@@ -124,4 +119,10 @@ setupGUI()
 LocalPlayer.CharacterAdded:Connect(function()
 	task.wait(1)
 	setupGUI()
+end)
+
+RunService.RenderStepped:Connect(function()
+	if LocalPlayer:FindFirstChild("PlayerGui") and not LocalPlayer.PlayerGui:FindFirstChild("QuickToolSelector") then
+		setupGUI()
+	end
 end)
