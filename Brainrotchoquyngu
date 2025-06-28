@@ -11,10 +11,10 @@ local screenGui = Instance.new("ScreenGui", PlayerGui)
 screenGui.Name = "QuickToolSelector"
 screenGui.ResetOnSpawn = false
 
--- Nút mở menu tool (đẩy lên cao thêm 20px)
+-- Nút mở menu tool (cao hơn nữa)
 local openButton = Instance.new("TextButton")
 openButton.Size = UDim2.new(0, 40, 0, 40)
-openButton.Position = UDim2.new(1, -60, 1, -200)
+openButton.Position = UDim2.new(1, -60, 1, -240)
 openButton.Text = "O"
 openButton.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
 openButton.TextColor3 = Color3.new(1, 1, 1)
@@ -22,10 +22,10 @@ openButton.TextSize = 20
 openButton.BorderSizePixel = 0
 openButton.Parent = screenGui
 
--- Nút Shift Lock (dưới nút O, cũng cao hơn 20px)
+-- Nút Shift Lock (dưới nút O)
 local shiftButton = Instance.new("TextButton")
 shiftButton.Size = UDim2.new(0, 80, 0, 30)
-shiftButton.Position = UDim2.new(1, -100, 1, -150)
+shiftButton.Position = UDim2.new(1, -100, 1, -190)
 shiftButton.Text = "Shift Lock: OFF"
 shiftButton.BackgroundColor3 = Color3.fromRGB(255, 170, 0)
 shiftButton.TextColor3 = Color3.new(1, 1, 1)
@@ -33,7 +33,7 @@ shiftButton.TextSize = 14
 shiftButton.BorderSizePixel = 0
 shiftButton.Parent = screenGui
 
--- Frame hiển thị danh sách tool
+-- Frame danh sách tool
 local toolFrame = Instance.new("Frame")
 toolFrame.Size = UDim2.new(0, 200, 0, 300)
 toolFrame.Position = UDim2.new(0.5, -100, 0.5, -150)
@@ -46,8 +46,9 @@ local UIListLayout = Instance.new("UIListLayout", toolFrame)
 UIListLayout.Padding = UDim.new(0, 5)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Cập nhật danh sách tool
+-- Cập nhật danh sách tool (chỉ khi mở menu)
 local function updateToolList()
+	if not toolFrame.Visible then return end
 	for _, child in pairs(toolFrame:GetChildren()) do
 		if child:IsA("TextButton") then
 			child:Destroy()
@@ -67,14 +68,12 @@ local function updateToolList()
 			btn.Parent = toolFrame
 
 			btn.MouseButton1Click:Connect(function()
-				-- Cất tool đang cầm
+				-- Bỏ tool cũ
 				for _, item in ipairs(LocalPlayer.Character:GetChildren()) do
 					if item:IsA("Tool") then
 						item.Parent = Backpack
 					end
 				end
-
-				-- Cầm tool mới
 				tool.Parent = LocalPlayer.Character
 				toolFrame.Visible = false
 			end)
@@ -82,17 +81,23 @@ local function updateToolList()
 	end
 end
 
--- Tự động cập nhật khi tool ra/vào balo
-Backpack.ChildAdded:Connect(updateToolList)
-Backpack.ChildRemoved:Connect(updateToolList)
-
--- Nút mở menu tool
+-- Luôn cập nhật khi mở menu (delay nhẹ cho chắc ăn)
 openButton.MouseButton1Click:Connect(function()
-	updateToolList()
 	toolFrame.Visible = not toolFrame.Visible
+	if toolFrame.Visible then
+		task.delay(0.1, updateToolList)
+	end
 end)
 
--- Shift Lock logic
+-- Cập nhật nếu đang mở menu và có tool thay đổi
+Backpack.ChildAdded:Connect(function()
+	if toolFrame.Visible then task.delay(0.1, updateToolList) end
+end)
+Backpack.ChildRemoved:Connect(function()
+	if toolFrame.Visible then task.delay(0.1, updateToolList) end
+end)
+
+-- Shift Lock custom (không lệch camera)
 local shiftLocked = false
 
 RunService.RenderStepped:Connect(function()
@@ -112,5 +117,5 @@ end)
 -- Toggle Shift Lock
 shiftButton.MouseButton1Click:Connect(function()
 	shiftLocked = not shiftLocked
-	shiftButton.Text = "Shiftlock: " .. (shiftLocked and "ON" or "OFF")
+	shiftButton.Text = "Shift Lock: " .. (shiftLocked and "ON" or "OFF")
 end)
