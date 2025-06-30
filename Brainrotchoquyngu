@@ -3,88 +3,14 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local function clearESP(player)
-	if player.Character then
-		local h = player.Character:FindFirstChild("ESPHighlight")
-		if h then h:Destroy() end
-		if player.Character:FindFirstChild("NameBillboard") then
-			player.Character.NameBillboard:Destroy()
-		end
-	end
-end
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
 
-local function createESP(player)
-	if player == LocalPlayer then return end
-	if not player.Character then return end
-
-	clearESP(player)
-
-	local highlight = Instance.new("Highlight")
-	highlight.Name = "ESPHighlight"
-	highlight.FillColor = Color3.fromRGB(255, 255, 255)
-	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-	highlight.FillTransparency = 0.8
-	highlight.OutlineTransparency = 0
-	highlight.Adornee = player.Character
-	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	highlight.Parent = player.Character
-
-	local head = player.Character:FindFirstChild("Head")
-	if head then
-		local billboard = Instance.new("BillboardGui")
-		billboard.Name = "NameBillboard"
-		billboard.Adornee = head
-		billboard.Size = UDim2.new(0, 100, 0, 30)
-		billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-		billboard.AlwaysOnTop = true
-
-		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(1, 0, 1, 0)
-		nameLabel.BackgroundTransparency = 1
-		nameLabel.Text = player.Name
-		nameLabel.TextColor3 = Color3.new(1, 1, 1)
-		nameLabel.TextStrokeTransparency = 0.7
-		nameLabel.TextScaled = true
-		nameLabel.Font = Enum.Font.SourceSans
-		nameLabel.Parent = billboard
-
-		billboard.Parent = player.Character
-	end
-end
-
-local function refreshAllESP()
-	for _, player in pairs(Players:GetPlayers()) do
-		if player.Character then
-			createESP(player)
-		end
-	end
-end
-
-Players.PlayerAdded:Connect(function(player)
-	player.CharacterAdded:Connect(function()
-		wait(1)
-		refreshAllESP()
-	end)
-end)
-
-Players.PlayerRemoving:Connect(function()
-	refreshAllESP()
-end)
-
-for _, player in pairs(Players:GetPlayers()) do
-	player.CharacterAdded:Connect(function()
-		wait(1)
-		refreshAllESP()
-	end)
-end
-
--- GUI chung
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESP_ShiftLock_GUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Nút Shift Lock
 local shiftButton = Instance.new("TextButton")
 shiftButton.Size = UDim2.new(0, 120, 0, 30)
 shiftButton.Position = UDim2.new(1, -130, 1, -250)
@@ -116,12 +42,108 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
--- Đảm bảo GUI không mất khi respawn
-LocalPlayer.CharacterAdded:Connect(function()
-	task.wait(1)
-	if not screenGui or not screenGui.Parent then
-		screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+local function clearESP(player)
+	if player.Character then
+		local h = player.Character:FindFirstChild("ESPHighlight")
+		if h then h:Destroy() end
+		if player.Character:FindFirstChild("NameBillboard") then
+			player.Character.NameBillboard:Destroy()
+		end
+		local m = player.Character:FindFirstChild("__ESPMarker")
+		if m then m:Destroy() end
 	end
+end
+
+local function createESP(player)
+	if player == LocalPlayer then return end
+	if not player.Character then return end
+
+	clearESP(player)
+	local target = player.Character
+
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "ESPHighlight"
+	highlight.FillColor = Color3.fromRGB(255, 255, 255)
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	highlight.FillTransparency = 0.8
+	highlight.OutlineTransparency = 0
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+
+	local foundPart = false
+	for _, part in ipairs(target:GetDescendants()) do
+		if part:IsA("BasePart") and part.Transparency < 1 and part.Size.Magnitude > 0 then
+			foundPart = true
+			break
+		end
+	end
+
+	if not foundPart then
+		local marker = Instance.new("Part")
+		marker.Name = "__ESPMarker"
+		marker.Anchored = true
+		marker.CanCollide = false
+		marker.Transparency = 1
+		marker.Size = Vector3.new(0.1, 0.1, 0.1)
+		marker.Position = Vector3.new(0, 9999, 0)
+		marker.Parent = target
+		highlight.Adornee = marker
+	else
+		highlight.Adornee = target
+	end
+
+	highlight.Parent = target
+
+	local head = target:FindFirstChild("Head")
+	if head then
+		local billboard = Instance.new("BillboardGui")
+		billboard.Name = "NameBillboard"
+		billboard.Adornee = head
+		billboard.Size = UDim2.new(0, 100, 0, 30)
+		billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+		billboard.AlwaysOnTop = true
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(1, 0, 1, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Text = player.Name
+		nameLabel.TextColor3 = Color3.new(1, 1, 1)
+		nameLabel.TextStrokeTransparency = 0.7
+		nameLabel.TextScaled = true
+		nameLabel.Font = Enum.Font.SourceSans
+		nameLabel.Parent = billboard
+
+		billboard.Parent = target
+	end
+end
+
+local function refreshAllESP()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player.Character then
+			createESP(player)
+		end
+	end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function()
+		wait(1)
+		refreshAllESP()
+	end)
+end)
+
+Players.PlayerRemoving:Connect(refreshAllESP)
+
+for _, player in pairs(Players:GetPlayers()) do
+	player.CharacterAdded:Connect(function()
+		wait(1)
+		refreshAllESP()
+	end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	Character = char
+	HRP = char:WaitForChild("HumanoidRootPart")
+	wait(1)
 	refreshAllESP()
 end)
 
