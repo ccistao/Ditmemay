@@ -44,61 +44,57 @@ end)
 
 local function clearESP(player)
 	if player.Character then
-		local h = player.Character:FindFirstChild("ESPHighlight")
-		if h then h:Destroy() end
-		if player.Character:FindFirstChild("NameBillboard") then
-			player.Character.NameBillboard:Destroy()
-		end
-		local m = player.Character:FindFirstChild("__ESPMarker")
-		if m then m:Destroy() end
+		local char = player.Character
+		if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
+		if char:FindFirstChild("ESPBox") then char.ESPBox:Destroy() end
+		if char:FindFirstChild("NameBillboard") then char.NameBillboard:Destroy() end
 	end
 end
 
 local function createESP(player)
 	if player == LocalPlayer then return end
 	if not player.Character then return end
-
 	clearESP(player)
-	local target = player.Character
 
-	local highlight = Instance.new("Highlight")
-	highlight.Name = "ESPHighlight"
-	highlight.FillColor = Color3.fromRGB(255, 255, 255)
-	highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-	highlight.FillTransparency = 0.8
-	highlight.OutlineTransparency = 0
-	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	local char = player.Character
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	local head = char:FindFirstChild("Head")
 
-	local foundPart = false
-	for _, part in ipairs(target:GetDescendants()) do
+	local hasVisiblePart = false
+	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part.Transparency < 1 and part.Size.Magnitude > 0 then
-			foundPart = true
+			hasVisiblePart = true
 			break
 		end
 	end
 
-	if not foundPart then
-		local marker = Instance.new("Part")
-		marker.Name = "__ESPMarker"
-		marker.Anchored = true
-		marker.CanCollide = false
-		marker.Transparency = 1
-		marker.Size = Vector3.new(0.1, 0.1, 0.1)
-		marker.Position = Vector3.new(0, 9999, 0)
-		marker.Parent = target
-		highlight.Adornee = marker
-	else
-		highlight.Adornee = target
+	if hasVisiblePart then
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "ESPHighlight"
+		highlight.FillColor = Color3.fromRGB(255, 255, 255)
+		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		highlight.FillTransparency = 0.8
+		highlight.OutlineTransparency = 0
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		highlight.Adornee = char
+		highlight.Parent = char
+	elseif hrp then
+		local box = Instance.new("BoxHandleAdornment")
+		box.Name = "ESPBox"
+		box.Adornee = hrp
+		box.Size = hrp.Size + Vector3.new(0.5, 0.5, 0.5)
+		box.Color3 = Color3.fromRGB(255, 255, 255)
+		box.Transparency = 0.25
+		box.AlwaysOnTop = true
+		box.ZIndex = 1
+		box.Parent = char
 	end
 
-	highlight.Parent = target
-
-	local head = target:FindFirstChild("Head")
 	if head then
 		local billboard = Instance.new("BillboardGui")
 		billboard.Name = "NameBillboard"
 		billboard.Adornee = head
-		billboard.Size = UDim2.new(0, 100, 0, 30)
+		billboard.Size = UDim2.new(0, 60, 0, 20)
 		billboard.StudsOffset = Vector3.new(0, 2.5, 0)
 		billboard.AlwaysOnTop = true
 
@@ -108,11 +104,12 @@ local function createESP(player)
 		nameLabel.Text = player.Name
 		nameLabel.TextColor3 = Color3.new(1, 1, 1)
 		nameLabel.TextStrokeTransparency = 0.7
-		nameLabel.TextScaled = true
-		nameLabel.Font = Enum.Font.SourceSans
+		nameLabel.TextScaled = false
+		nameLabel.TextSize = 12
+		nameLabel.Font = Enum.Font.SourceSansBold
 		nameLabel.Parent = billboard
 
-		billboard.Parent = target
+		billboard.Parent = char
 	end
 end
 
@@ -126,16 +123,16 @@ end
 
 Players.PlayerAdded:Connect(function(player)
 	player.CharacterAdded:Connect(function()
-		wait(1)
+		task.wait(1)
 		refreshAllESP()
 	end)
 end)
 
 Players.PlayerRemoving:Connect(refreshAllESP)
 
-for _, player in pairs(Players:GetPlayers()) do
+for _, player in ipairs(Players:GetPlayers()) do
 	player.CharacterAdded:Connect(function()
-		wait(1)
+		task.wait(1)
 		refreshAllESP()
 	end)
 end
@@ -143,7 +140,7 @@ end
 LocalPlayer.CharacterAdded:Connect(function(char)
 	Character = char
 	HRP = char:WaitForChild("HumanoidRootPart")
-	wait(1)
+	task.wait(1)
 	refreshAllESP()
 end)
 
