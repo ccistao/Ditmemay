@@ -1,3 +1,6 @@
+
+task.wait(0.3)
+
 local Light = game:GetService("Lighting")
 
 function dofullbright()
