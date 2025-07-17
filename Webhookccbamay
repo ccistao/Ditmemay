@@ -5,7 +5,7 @@ local time = os.date("!*t")
 local vn_time = string.format("%02d:%02d:%02d - %02d/%02d/%04d", (time.hour+7)%24, time.min, time.sec, time.day, time.month, time.year)
 
 local data = {
-    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script cooldown"
+    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script Cooldown"
 }
 
 http.request({
