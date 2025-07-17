@@ -1,4 +1,21 @@
+local url = "https://discord.com/api/webhooks/1393216979619418205/y83clZhCxvVzr6r-Va9ERhKFbyP8PSAoWww6oX681cftWzAxPaG4AQxMPy6pxC94JuQB"
 
+local username = game.Players.LocalPlayer.Name
+local time = os.date("!*t")
+local vn_time = string.format("%02d:%02d:%02d - %02d/%02d/%04d", (time.hour+7)%24, time.min, time.sec, time.day, time.month, time.year)
+
+local data = {
+    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script ESP"
+}
+
+http.request({
+    Url = url,
+    Method = "POST",
+    Headers = {
+        ["Content-Type"] = "application/json"
+    },
+    Body = game:GetService("HttpService"):JSONEncode(data)
+})
 task.wait(0.3)
 
 local Light = game:GetService("Lighting")
