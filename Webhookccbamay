@@ -1,33 +1,18 @@
-pcall(function()
-    local HttpService = game:GetService("HttpService")
-    local Players = game:GetService("Players")
+local url = "https://discord.com/api/webhooks/1393216979619418205/y83clZhCxvVzr6r-Va9ERhKFbyP8PSAoWww6oX681cftWzAxPaG4AQxMPy6pxC94JuQB"
 
-    local username = Players.LocalPlayer.Name
+local username = game.Players.LocalPlayer.Name
+local time = os.date("!*t")
+local vn_time = string.format("%02d:%02d:%02d - %02d/%02d/%04d", (time.hour+7)%24, time.min, time.sec, time.day, time.month, time.year)
 
-    local function getVietnamTime()
-        local utc = os.time(os.date("!*t"))
-        local vnTime = utc + (7 * 3600)
-        return os.date("%H:%M", vnTime)
-    end
+local data = {
+    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script cooldown"
+}
 
-    local payload = {
-        ["username"] = "Cooldown Logger",
-        ["embeds"] = {{
-            ["title"] = "🟢 Script đã được bật",
-            ["fields"] = {
-                {["name"] = "👤 Username", ["value"] = username, ["inline"] = true},
-                {["name"] = "⏰ Giờ (VN)", ["value"] = getVietnamTime(), ["inline"] = true},
-                {["name"] = "📌", ["value"] = "Người chơi đang sài script cooldown", ["inline"] = false}
-            },
-            ["color"] = 65280
-        }}
-    }
-
-    local json = HttpService:JSONEncode(payload)
-
-    HttpService:PostAsync(
-        "https://discord.com/api/webhooks/1393216979619418205/y83clZhCxvVzr6r-Va9ERhKFbyP8PSAoWww6oX681cftWzAxPaG4AQxMPy6pxC94JuQB",
-        json,
-        Enum.HttpContentType.ApplicationJson
-    )
-end)
+http.request({
+    Url = url,
+    Method = "POST",
+    Headers = {
+        ["Content-Type"] = "application/json"
+    },
+    Body = game:GetService("HttpService"):JSONEncode(data)
+})
