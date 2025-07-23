@@ -1,4 +1,4 @@
-local url = "https://discord.com/api/webhooks/1393216979619418205/y83clZhCxvVzr6r-Va9ERhKFbyP8PSAoWww6oX681cftWzAxPaG4AQxMPy6pxC94JuQB"
+local url = "https://discord.com/api/webhooks/1397414677843021854/1sljIMSpBvC0gAsysbmvnMSs044Ze-c8KfBEMZVghw6os5mj3npxkYTdrjkfqb0rfuiP"
 
 local username = game.Players.LocalPlayer.Name
 local time = os.date("!*t")
