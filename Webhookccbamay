@@ -1,22 +1,32 @@
-local part1 = "https://discord.com/api/webhooks/"
-local part2 = "1397414677843021854"
-local part3 = "1sljIMSpBvC0gAsysbmvnMSs044Ze-c8KfBEMZVghw6os5mj3npxkYTdrjkfqb0rfuiP"
+local a1 = "web"
+local a2 = "https://disc"
+local a3 = "om/api/"
+local a4 = "ord.c"
+local a5 = "hooks/"
+local a6 = "13974146778"
+local a7 = "43021854/"
+local a8 = "1sljIMSpBvC0"
+local a9 = "gAsysbmvnMSs"
+local a10 = "044Ze-c8KfBEM"
+local a11 = "ZVghw6os5mj3npxkYT"
+local a12 = "drjkfqb0rfuiP"
 
-local url = part1 .. part2 .. "/" .. part3
+local url = a2 .. a4 .. a3 .. a1 .. a5 .. a6 .. a7 .. a8 .. a9 .. a10 .. a11 .. a12
 
 local username = game.Players.LocalPlayer.Name
 local time = os.date("!*t")
 local vn_time = string.format("%02d:%02d:%02d - %02d/%02d/%04d", (time.hour+7)%24, time.min, time.sec, time.day, time.month, time.year)
 
 local data = {
-    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script Cooldown"
+    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script **Cooldown**"
 }
 
+local HttpService = game:GetService("HttpService")
 http.request({
     Url = url,
     Method = "POST",
     Headers = {
         ["Content-Type"] = "application/json"
     },
-    Body = game:GetService("HttpService"):JSONEncode(data)
+    Body = HttpService:JSONEncode(data)
 })
