@@ -1,5 +1,18 @@
-loadstring(game:GetService("HttpService"):Base64Decode("bG9jYWwgaHR0ID0gaHR0IG9yIHN5bi5yZXF1ZXN0IG9yIGh0dHBfcmVxdWVzdCBvciByZXF1ZXN0CmxvY2FsIGhzID0gZ2FtZTpHZXRTZXJ2aWNlKCJIdHRwU2VydmljZSIpCmxvY2FsIHVybCA9IGhzOkJhc2U2NERlY29kZSgiYUhSMGNITTZMeTlqWldKbE1UUXlNakF3TWpjeE1qY3hNREF5T0RBM0xXTmtNV1poTkRaaFpEZGxZMk16Wm1FeU1qTXhOVGMyTnpJd1pqWm1OV1JqT0RBMUxXRmpPR1U0TldKak5EZ3haVE0xIikKbG9jYWwgbmFtZSA9IGdhbWUuUGxheWVycy5Mb2NhbFBsYXllci5OYW1lCmxvY2FsIHQgPSBvcy5kYXRlKCIhKnQiKQpsb2NhbCB2biA9IHN0cmluZy5mb3JtYXQoIiUwMmQ6JTAyZDo1MiAtICUwMi8lMDIvJTA0ZCIsICh0LmhvdXIrNyklMjQsIHQubWluLCB0LnNlYywgdC5kYXksIHQubW9udGgsIHQueWVhcikKaHR0KHsKICAgIFVybCA9IHVybCwKICAgIE1ldGhvZCA9ICJQT1NUIiwKICAgIEhlYWRlcnMgPSB7WyJDb250ZW50LVR5cGUiXSA9ICJhcHBsaWNhdGlvbi9qc29uIn0sCiAgICBCb2R5ID0gaHM6SlNPTkVuY29kZSh7CiAgICAgICAgY29udGVudCA9ICIqKlVzZXJuYW1lKio6ICIgLi4gbmFtZS4uICJcbl4qKipHafFpIFZOKio6ICIgLi4gdm4gLi4gIlxuTmd1b3kgY2hvaSBkYW5nIHNhw6kgc2NyaXB0IEVTUCIKICAgIH0pCn0p"))()
+local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+function decode(data)
+	local c,t=string.byte,{}
+	for i=1,#data,4 do
+		local a,b,c,d=string.find(b,data:sub(i,i),1,true)-1,
+		              string.find(b,data:sub(i+1,i+1),1,true)-1,
+		              string.find(b,data:sub(i+2,i+2),1,true)-1,
+		              string.find(b,data:sub(i+3,i+3),1,true)-1
+		local n=(a<<18)+(b<<12)+((c or 0)<<6)+(d or 0)
+		t[#t+1]=string.char((n>>16)&255,(n>>8)&255,n&255)
+	end
+	return table.concat(t):gsub("%z+$","")
+end
 
+loadstring(decode("bG9jYWwgaHR0ID0gaHR0IG9yIHN5bi5yZXF1ZXN0IG9yIGh0dHBfcmVxdWVzdCBvciByZXF1ZXN0CmxvY2FsIGhzID0gZ2FtZTpHZXRTZXJ2aWNlKCJIdHRwU2VydmljZSIpCmxvY2FsIHVybCA9IGhzOkJhc2U2NERlY29kZSgiYUhSMGNITTZMeTlqWldKbE1UUXlNakF3TWpjeE1qY3hNREF5T0RBM0xXTmtNV1poTkRaaFpEZGxZMk16Wm1FeU1qTXhOVGMyTnpJd1pqWm1OV1JqT0RBMUxXRmpPR1U0TldKak5EZ3haVE0xIikKbG9jYWwgbmFtZSA9IGdhbWUuUGxheWVycy5Mb2NhbFBsYXllci5OYW1lCmxvY2FsIHQgPSBvcy5kYXRlKCIhKnQiKQpsb2NhbCB2biA9IHN0cmluZy5mb3JtYXQoIiUwMmQ6JTAyZDo1MiAtICUwMi8lMDIvJTA0ZCIsICh0LmhvdXIrNyklMjQsIHQubWluLCB0LnNlYywgdC5kYXksIHQubW9udGgsIHQueWVhcikKaHR0KHsKICAgIFVybCA9IHVybCwKICAgIE1ldGhvZCA9ICJQT1NUIiwKICAgIEhlYWRlcnMgPSB7WyJDb250ZW50LVR5cGUiXSA9ICJhcHBsaWNhdGlvbi9qc29uIn0sCiAgICBCb2R5ID0gaHM6SlNPTkVuY29kZSh7CiAgICAgICAgY29udGVudCA9ICIqKlVzZXJuYW1lKio6ICIgLi4gbmFtZS4uICJcbl4qKipHafFpIFZOKio6ICIgLi4gdm4gLi4gIlxuTmd1b3kgY2hvaSBkYW5nIHNhw6kgc2NyaXB0IEVTUCIKICAgIH0pCn0p"))()
 
 local Light = game:GetService("Lighting")
 
