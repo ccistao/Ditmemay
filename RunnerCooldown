@@ -4,250 +4,245 @@ task.wait(0.3)
 
 
 do
-	local Players = game:GetService("Players")
-	local TweenService = game:GetService("TweenService")
-	local player = Players.LocalPlayer
-
-	local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-	gui.ResetOnSpawn = false
-	gui.Name = "IntroGui"
-	gui.Parent = player:WaitForChild("PlayerGui")
-
-	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, 0, 1, 0)
-	frame.BackgroundTransparency = 1
-	frame.Parent = gui
-
-	local function createText(text, yOffset, textSize)
-		local label = Instance.new("TextLabel")
-		label.Text = text
-		label.Size = UDim2.new(0, 600, 0, 60) -- to hơn nhiều
-		label.Position = UDim2.new(0.5, 0, 0.5, yOffset)
-		label.AnchorPoint = Vector2.new(0.5, 0.5)
-		label.BackgroundTransparency = 1
-		label.TextColor3 = Color3.new(1, 1, 1)
-		label.TextStrokeTransparency = 0.2
-		label.TextStrokeColor3 = Color3.fromRGB(0, 170, 255)
-		label.Font = Enum.Font.GothamBold
-		label.TextTransparency = 1
-		label.TextWrapped = false
-		label.TextScaled = false
-		label.TextSize = textSize or 36
-		label.Parent = frame
-		return label
-	end
-
-	local mainText = createText("script made by zerodepchai", -35, 38)
-	local subText = createText("ver 3.3.1 beta", 10, 26) -- lệch xuống dưới 70px (giữ khoảng cách thoáng)
-
-	local function fadeIn(label)
-		local tween = TweenService:Create(label, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0})
-		tween:Play()
-	end
-
-	local function fadeOut(label)
-		local tween = TweenService:Create(label, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1})
-		tween:Play()
-	end
-
-	fadeIn(mainText)
-	fadeIn(subText)
-
-	task.wait(5)
-
-	fadeOut(mainText)
-	fadeOut(subText)
-
-	task.wait(1.5)
-	gui:Destroy()
-	task.wait(0.3)
-end
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
-wait(0.5)
-
-for _, name in ipairs({"BeastCooldownUI", "BeastBanner"}) do
-	local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild(name)
-	if gui then gui:Destroy() end
-end
-
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn = false
+gui.Name = "IntroGui"
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 1, 0)
+frame.BackgroundTransparency = 1
+frame.Parent = gui
+
+local function createText(text, yOffset, textSize)
+	local label = Instance.new("TextLabel")
+	label.Text = text
+	label.Size = UDim2.new(0, 600, 0, 60)
+	label.Position = UDim2.new(0.5, 0, 0.5, yOffset)
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(1,1,1)
+	label.TextStrokeTransparency = 0.2
+	label.TextStrokeColor3 = Color3.fromRGB(0,170,255)
+	label.Font = Enum.Font.GothamBold
+	label.TextTransparency = 1
+	label.TextWrapped = false
+	label.TextScaled = false
+	label.TextSize = textSize or 36
+	label.Parent = frame
+	return label
+end
+
+local mainText = createText("script made by zerodepchai", -35, 38)
+local subText = createText("ver 3.5.1 beta", 10, 26)
+
+local function fadeIn(label)
+	local tween = TweenService:Create(label, TweenInfo.new(1.5), {TextTransparency = 0})
+	tween:Play()
+end
+local function fadeOut(label)
+	local tween = TweenService:Create(label, TweenInfo.new(1.5), {TextTransparency = 1})
+	tween:Play()
+end
+
+fadeIn(mainText)
+fadeIn(subText)
+task.wait(5)
+fadeOut(mainText)
+fadeOut(subText)
+task.wait(1.5)
+gui:Destroy()
+task.wait(0.3)
+
+-- Xóa GUI cũ nếu có
+for _, name in ipairs({"BeastCooldownUI","BeastBanner"}) do
+	local g = player.PlayerGui:FindFirstChild(name)
+	if g then g:Destroy() end
+end
+
+-- Các dịch vụ
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
+local LocalPlayer = player
 
-local LocalPlayer = Players.LocalPlayer
+-- Biến
 local beast = nil
 local foundBeast = false
-local cooldownStart = nil
 local usedRunner = false
+local cooldownStart = nil
 local monitoring = false
 
-local function makeDraggable(guiObject)
-	local dragging, dragStart, startPos = false, nil, nil
-	guiObject.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = guiObject.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local delta = input.Position - dragStart
-			guiObject.Position = UDim2.new(
-				startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
-end
-
+-- Tạo bảng cooldown
 local function createCooldownUI()
-	local screenGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("BeastCooldownUI")
-	if screenGui then return screenGui:FindFirstChild("CooldownLabel"):FindFirstChildOfClass("TextLabel") end
-	screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "BeastCooldownUI"
-	screenGui.ResetOnSpawn = false
-	screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "BeastCooldownUI"
+	gui.ResetOnSpawn = false
+	gui.Parent = LocalPlayer.PlayerGui
 	local frame = Instance.new("Frame")
 	frame.Name = "CooldownLabel"
-	frame.Size = UDim2.new(0, 180, 0, 40)
-	frame.Position = UDim2.new(1, -190, 0, 10)
+	frame.Size = UDim2.new(0,180,0,40)
+	frame.Position = UDim2.new(1,-190,0,10)
 	frame.BackgroundTransparency = 0.3
-	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	frame.BorderSizePixel = 0
-	frame.Parent = screenGui
+	frame.Parent = gui
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 1, 0)
+	label.Size = UDim2.new(1,0,1,0)
 	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextColor3 = Color3.new(1,1,1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
 	label.Text = "Cooldown: Chưa sài"
 	label.Parent = frame
-	makeDraggable(frame)
+	-- Cho kéo
+	local dragging,dragStart,startPos=false,nil,nil
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+			dragging=true
+			dragStart=input.Position
+			startPos=frame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState==Enum.UserInputState.End then dragging=false end
+			end)
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+			local delta=input.Position-dragStart
+			frame.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
+		end
+	end)
 	return label
 end
 
+-- Banner tìm Beast
 local function showBeastFoundBanner()
-	if LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("BeastBanner") then return end
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "BeastBanner"
-	gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+	gui.Parent = LocalPlayer.PlayerGui
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0, 250, 0, 40)
-	label.Position = UDim2.new(1, 10, 0, 10)
-	label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Size = UDim2.new(0,250,0,40)
+	label.Position = UDim2.new(1,10,0,10)
+	label.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	label.TextColor3 = Color3.new(1,1,1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
 	label.Text = "Đã tìm thấy Beast !!!"
 	label.BorderSizePixel = 2
 	label.Parent = gui
-	makeDraggable(label)
-	local tweenIn = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, -260, 0, 10) })
-	local tweenOut = TweenService:Create(label, TweenInfo.new(0.5), { Position = UDim2.new(1, 10, 0, 10) })
+	-- Rainbow viền
 	local colors = {
-		Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 128, 0),
-		Color3.fromRGB(255, 255, 0), Color3.fromRGB(0, 255, 0),
-		Color3.fromRGB(0, 255, 255), Color3.fromRGB(0, 0, 255),
-		Color3.fromRGB(128, 0, 255)
+		Color3.fromRGB(255,0,0),Color3.fromRGB(255,128,0),
+		Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,0),
+		Color3.fromRGB(0,255,255),Color3.fromRGB(0,0,255),
+		Color3.fromRGB(128,0,255)
 	}
-	local index = 1
-	local rainbowConnection
-	rainbowConnection = RunService.RenderStepped:Connect(function()
-		if not label or not label.Parent then
-			rainbowConnection:Disconnect()
-			return
-		end
-		label.BorderColor3 = colors[index]
-		index = index % #colors + 1
+	local idx=1
+	local conn=RunService.RenderStepped:Connect(function()
+		if not label or not label.Parent then conn:Disconnect() return end
+		label.BorderColor3=colors[idx]
+		idx=idx%#colors+1
 	end)
+	-- Tween
+	local tweenIn=TweenService:Create(label,TweenInfo.new(0.5),{Position=UDim2.new(1,-260,0,10)})
+	local tweenOut=TweenService:Create(label,TweenInfo.new(0.5),{Position=UDim2.new(1,10,0,10)})
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
 	task.wait(2.5)
 	tweenOut:Play()
 	tweenOut.Completed:Wait()
-	rainbowConnection:Disconnect()
+	conn:Disconnect()
 	gui:Destroy()
 end
 
-local function isStillBeast(player)
-	local stats = player:FindFirstChild("TempPlayerStatsModule")
+-- Reset state
+local function resetState()
+	beast=nil
+	foundBeast=false
+	usedRunner=false
+	cooldownStart=nil
+end
+
+-- Kiểm tra Beast
+local function isStillBeast(p)
+	local stats=p:FindFirstChild("TempPlayerStatsModule")
 	if not stats then return false end
-	local isBeast = stats:FindFirstChild("IsBeast")
+	local isBeast=stats:FindFirstChild("IsBeast")
 	return isBeast and isBeast:IsA("BoolValue") and isBeast.Value
 end
 
-local function resetState()
-	beast = nil
-	foundBeast = false
-	cooldownStart = nil
-	usedRunner = false
-end
-
-local function monitorRunnerCooldown()
-	if monitoring then return end
-	monitoring = true
-	local label = createCooldownUI()
-	local lastCheck = 0
-	local minInterval = 1 / 40
-	RunService.Heartbeat:Connect(function(dt)
-		local now = tick()
-		local fps = 1 / dt
-		if fps >= 65 or (now - lastCheck) >= minInterval then
-			lastCheck = now
-			if not foundBeast or not beast or not beast.Character then return end
-			local humanoid = beast.Character:FindFirstChild("Humanoid")
-			if not humanoid then return end
-			local speed = humanoid.WalkSpeed
-			if speed > 19 then
-				usedRunner = true
-				cooldownStart = nil
-				label.Text = "Cooldown: Đang sài"
-			elseif usedRunner and speed >= 16 and speed <= 19 and not cooldownStart then
-				cooldownStart = tick()
-			end
-			if cooldownStart then
-				local remaining = math.max(0, 22 - (tick() - cooldownStart))
-				if remaining > 0 then
-					label.Text = string.format("Cooldown: %.1fs", remaining)
-				else
-					cooldownStart = nil
-					usedRunner = false
-					label.Text = "Cooldown: Đã hồi"
-				end
-			end
+-- Theo dõi Runner
+local labelCooldown=createCooldownUI()
+RunService.Heartbeat:Connect(function()
+	if not foundBeast or not beast or not beast.Character then return end
+	local humanoid=beast.Character:FindFirstChild("Humanoid")
+	if not humanoid then return end
+	local speed=humanoid.WalkSpeed
+	if speed>19 then
+		usedRunner=true
+		cooldownStart=nil
+		labelCooldown.Text="Cooldown: Đang sài Runner"
+	elseif usedRunner and speed>=16 and speed<=19 and not cooldownStart then
+		cooldownStart=tick()
+	end
+	if cooldownStart then
+		local remain=math.max(0,22-(tick()-cooldownStart))
+		if remain>0 then
+			labelCooldown.Text=string.format("Cooldown: %.1fs",remain)
+		else
+			cooldownStart=nil
+			usedRunner=false
+			labelCooldown.Text="Cooldown: Đã hồi"
 		end
-	end)
-end
+	end
+end)
 
-monitorRunnerCooldown()
+-- Phát hiện Beast
 task.spawn(function()
 	while true do
 		task.wait(5)
-		if beast and not isStillBeast(beast) then
-			resetState()
-		end
+		if beast and not isStillBeast(beast) then resetState() end
 		if not foundBeast then
-			local newBeast = nil
-			for _, player in ipairs(Players:GetPlayers()) do
-				if isStillBeast(player) then
-					newBeast = player
+			for _,p in ipairs(Players:GetPlayers()) do
+				if isStillBeast(p) then
+					beast=p
+					foundBeast=true
+					showBeastFoundBanner()
 					break
 				end
 			end
-			if newBeast then
-				beast = newBeast
-				foundBeast = true
-				showBeastFoundBanner()
+		end
+	end
+end)
+
+-- Theo dõi Stalker
+task.spawn(function()
+	while true do
+		if foundBeast and beast and beast.Character then
+			local lights={}
+			for _,o in ipairs(beast.Character:GetDescendants()) do
+				if o:IsA("PointLight") or o:IsA("SpotLight") or o:IsA("SurfaceLight") then
+					table.insert(lights,o)
+				end
+			end
+			for _,light in ipairs(lights) do
+				if not light:IsDescendantOf(workspace) or not light.Enabled or light.Brightness==0 then
+					labelCooldown.Text="Cooldown: Đang sài Stalker"
+					task.wait(7)
+					local cd=tick()
+					while tick()-cd<20 do
+						local remain=math.max(0,20-(tick()-cd))
+						labelCooldown.Text=string.format("Cooldown: %.1fs",remain)
+						task.wait(0.1)
+					end
+					labelCooldown.Text="Cooldown: Đã hồi"
+					break
+				end
 			end
 		end
+		task.wait(0.2)
 	end
 end)
