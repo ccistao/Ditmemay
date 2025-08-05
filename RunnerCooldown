@@ -186,6 +186,7 @@ local cooldownStart = nil
 local usedRunner = false
 local stalkerActive = false
 local labelCooldown = createCooldownUI()
+detectSkill()
 
 local function isBeast(p)
 	local stats = p:FindFirstChild("TempPlayerStatsModule")
@@ -193,22 +194,26 @@ local function isBeast(p)
 end
 
 -- Phát hiện và theo dõi skill Beast
-local function detectSkill()
-	local Replicated = game:GetService("ReplicatedStorage")
-	local power = Replicated:FindFirstChild("CurrentPower")
-	if power and power:IsA("StringValue") then
-		-- Gán skill ban đầu
-		skill = power.Value:lower()
-		print("Đã phát hiện Beast skill ban đầu:", skill)
+local Replicated = game:GetService("ReplicatedStorage")
 
-		-- Tự động cập nhật khi skill đổi
-		power:GetPropertyChangedSignal("Value"):Connect(function()
-			skill = power.Value:lower()
-			print("Skill Beast thay đổi thành:", skill)
-		end)
+local function detectSkill()
+	local power
+	repeat
+		power = Replicated:FindFirstChild("CurrentPower")
+		if not power then
+			task.wait(1)
+		end
+	until power ~= nil
+
+	if power:IsA("StringValue") then
+		skill = power.Value:lower()
 	else
-		warn("Không tìm thấy CurrentPower!")
+		return
 	end
+
+	power:GetPropertyChangedSignal("Value"):Connect(function()
+		skill = power.Value:lower()
+	end)
 end
 
 -- Quét Beast
