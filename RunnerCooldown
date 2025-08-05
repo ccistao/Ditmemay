@@ -276,7 +276,7 @@ RunService.Heartbeat:Connect(function()
 					end
 				end
 
-				if anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
+				if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
 					stalkerActive = true
 					labelCooldown.Text = "Cooldown: Đang sài Stalker"
 
