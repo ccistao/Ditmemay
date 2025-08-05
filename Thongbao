@@ -6,14 +6,12 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Xóa banner cũ nếu có
 for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner"}) do
 	local old = PlayerGui:FindFirstChild(name)
 	if old then old:Destroy() end
 end
 if _G.RunnerUsedConnection then _G.RunnerUsedConnection:Disconnect() end
 
--- Viền bảy màu
 local function createRainbowBorder(frame)
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
@@ -32,7 +30,6 @@ local function createRainbowBorder(frame)
 	end)
 end
 
--- Tạo banner
 local function showBanner(text, name)
 	if PlayerGui:FindFirstChild(name) then return end
 	local gui = Instance.new("ScreenGui", PlayerGui)
@@ -56,7 +53,6 @@ local function showBanner(text, name)
 	gui:Destroy()
 end
 
--- Lấy Beast
 local function getBeast()
 	for _, player in ipairs(Players:GetPlayers()) do
 		local stats = player:FindFirstChild("TempPlayerStatsModule")
@@ -67,7 +63,6 @@ local function getBeast()
 	return nil
 end
 
--- Theo dõi skill Stalker
 local function watchLights(beast)
 	task.spawn(function()
 		local light
@@ -94,7 +89,6 @@ local function watchLights(beast)
 	end)
 end
 
--- Quét skill Beast chọn
 local function startSkillScan()
 	local foundSkill = false
 	local skillName = "Không rõ"
@@ -102,17 +96,16 @@ local function startSkillScan()
 	local function checkSkill(obj)
 		if obj:IsA("StringValue") or obj:IsA("BoolValue") then
 			local val = tostring(obj.Value):lower()
-			if val:find("runner") then
-				skillName = "Runner"
-				foundSkill = true
-			elseif val:find("stalker") then
+			if val:find("stalker") then
 				skillName = "Stalker"
+				foundSkill = true
+			elseif val:find("runner") then
+				skillName = "Runner"
 				foundSkill = true
 			end
 		end
 	end
 
-	-- Theo dõi ReplicatedStorage để quét skill
 	local connection
 	connection = Replicated.DescendantAdded:Connect(function(obj)
 		if not foundSkill then task.defer(checkSkill, obj) end
@@ -126,7 +119,6 @@ local function startSkillScan()
 			task.wait(0.2)
 		end
 		connection:Disconnect()
-		task.wait(7)
 		showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
 		if skillName == "Stalker" then
 			local beast = getBeast()
@@ -135,14 +127,12 @@ local function startSkillScan()
 	end)
 end
 
--- Theo dõi Runner dùng Q + Detect Beast đổi mỗi 3s
 local lastBeast = nil
 local lastQ = false
 task.spawn(function()
 	while true do
 		local currentBeast = getBeast()
 		if currentBeast then
-			-- Nếu Beast mới → reset quét skill
 			if currentBeast ~= lastBeast then
 				lastBeast = currentBeast
 				startSkillScan()
