@@ -1,8 +1,6 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
 task.wait(0.3)
 
-
- --[[ INTRO ]]
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -131,7 +129,6 @@ local function createCooldownUI()
 		end
 	end
 
-	-- Gán cho cả frame và label để kéo được ở mọi chỗ
 	frame.InputBegan:Connect(startDrag)
 	label.InputBegan:Connect(startDrag)
 	UserInputService.InputChanged:Connect(updateDrag)
