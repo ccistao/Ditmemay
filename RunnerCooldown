@@ -65,7 +65,7 @@ for _, name in ipairs({"BeastCooldownUI", "BeastBanner"}) do
 end
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
-task.wait(1)
+task.wait(0.5)
 
 --[[ VÙNG CAVE ]]
 local caveMin = Vector3.new(-275, -10, -275)
