@@ -132,8 +132,10 @@ local function startSkillScan()
 
 		if _G.SkillScanConnection then _G.SkillScanConnection:Disconnect() end
 
-		showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
-		if skillName == "Stalker" then
+		task.delay(5, function()
+                 showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
+		end)
+                if skillName == "Stalker" then
 			local beast = getBeast()
 			if beast then watchLights(beast) end
 		end
