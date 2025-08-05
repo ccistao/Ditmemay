@@ -155,14 +155,16 @@ task.spawn(function()
 				startSkillScan()
 			end
 
-			local humanoid = currentBeast.Character and currentBeast.Character:FindFirstChild("Humanoid")
-			if humanoid then
-				local speed = humanoid.WalkSpeed
-				if speed > 19 and not lastQ then
-					lastQ = true
-					showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
-				elseif speed <= 19 then
-					lastQ = false
+			if currentBeast.Character then
+				local humanoid = currentBeast.Character:FindFirstChild("Humanoid")
+				if humanoid then
+					local speed = humanoid.WalkSpeed
+					if speed > 19 and not lastQ then
+						lastQ = true
+						showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
+					elseif speed <= 19 then
+						lastQ = false
+					end
 				end
 			end
 		end
