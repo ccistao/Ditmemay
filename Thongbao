@@ -1,23 +1,19 @@
 local Players = game:GetService("Players")
+local Replicated = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local oldBanner = PlayerGui:FindFirstChild("RunnerUsedBanner")
-if oldBanner then
-	oldBanner:Destroy()
+-- Xóa banner cũ nếu có
+for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner"}) do
+	local old = PlayerGui:FindFirstChild(name)
+	if old then old:Destroy() end
 end
+if _G.RunnerUsedConnection then _G.RunnerUsedConnection:Disconnect() end
 
-if _G.RunnerUsedConnection then
-	_G.RunnerUsedConnection:Disconnect()
-	_G.RunnerUsedConnection = nil
-end
-
-local beast = nil
-local lastQ = false
-
+-- Viền bảy màu
 local function createRainbowBorder(frame)
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
@@ -31,32 +27,27 @@ local function createRainbowBorder(frame)
 	})
 	gradient.Rotation = 0
 	gradient.Parent = frame
-
 	_G.RunnerUsedConnection = RunService.RenderStepped:Connect(function()
-		gradient.Rotation = (gradient.Rotation + 1) % 360
+		if gradient then gradient.Rotation = (gradient.Rotation + 1) % 360 end
 	end)
 end
 
-local function showRunnerUsedBanner()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "RunnerUsedBanner"
-	gui.Parent = PlayerGui
-
-	local label = Instance.new("TextLabel")
+-- Tạo banner
+local function showBanner(text, name)
+	if PlayerGui:FindFirstChild(name) then return end
+	local gui = Instance.new("ScreenGui", PlayerGui)
+	gui.Name = name
+	local label = Instance.new("TextLabel", gui)
 	label.Size = UDim2.new(0, 250, 0, 40)
 	label.Position = UDim2.new(1, 10, 0, 10)
 	label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
-	label.Text = "Beast đã dùng Q (Runner) !!!"
-	label.Parent = gui
-
+	label.Text = text
 	createRainbowBorder(label)
-
-	local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, -270, 0, 10) })
-	local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), { Position = UDim2.new(1, 10, 0, 10) })
-
+	local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, -270, 0, 10)})
+	local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, 10, 0, 10)})
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
 	task.wait(3.4)
@@ -65,7 +56,8 @@ local function showRunnerUsedBanner()
 	gui:Destroy()
 end
 
-local function getCurrentBeast()
+-- Lấy Beast
+local function getBeast()
 	for _, player in ipairs(Players:GetPlayers()) do
 		local stats = player:FindFirstChild("TempPlayerStatsModule")
 		if stats and stats:FindFirstChild("IsBeast") and stats.IsBeast.Value then
@@ -75,21 +67,92 @@ local function getCurrentBeast()
 	return nil
 end
 
+-- Theo dõi skill Stalker
+local function watchLights(beast)
+	local lightWatcherRunning = false
+	task.spawn(function()
+		local light
+		-- Chờ ánh sáng xuất hiện
+		repeat
+			if beast and beast.Character then
+				light = beast.Character:FindFirstChildWhichIsA("PointLight", true)
+			end
+			task.wait(0.1)
+		until light and light:IsDescendantOf(workspace)
+
+		local lightWasOn = light.Enabled and light.Brightness > 0
+
+		while beast and beast.Character and light do
+			local isNowOff = (not light.Enabled or light.Brightness == 0)
+			if lightWasOn and isNowOff then
+				showBanner("Beast đã dùng Q (Stalker) !!!", "StalkerUsedBanner")
+				repeat task.wait(0.1) until light.Enabled and light.Brightness > 0
+				lightWasOn = true
+			else
+				lightWasOn = light.Enabled and light.Brightness > 0
+			end
+			task.wait(0.1)
+		end
+	end)
+end
+
+-- Theo dõi Runner dùng Q
+local beast = nil
+local lastQ = false
 task.spawn(function()
 	while true do
-		beast = getCurrentBeast()
+		beast = getBeast()
 		if beast and beast.Character then
 			local humanoid = beast.Character:FindFirstChild("Humanoid")
 			if humanoid then
 				local speed = humanoid.WalkSpeed
 				if speed > 19 and not lastQ then
 					lastQ = true
-					showRunnerUsedBanner()
+					showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
 				elseif speed <= 19 then
 					lastQ = false
 				end
 			end
 		end
 		task.wait(0.05)
+	end
+end)
+
+-- Quét skill Beast chọn
+local foundSkill = false
+local skillName = "Không rõ"
+local function checkSkill(obj)
+	if obj:IsA("StringValue") or obj:IsA("BoolValue") then
+		local val = tostring(obj.Value):lower()
+		if val:find("runner") then
+			skillName = "Runner"
+			foundSkill = true
+		elseif val:find("stalker") then
+			skillName = "Stalker"
+			foundSkill = true
+		end
+	end
+end
+
+-- Theo dõi ReplicatedStorage để quét skill
+Replicated.DescendantAdded:Connect(function(obj)
+	if not foundSkill then task.defer(checkSkill, obj) end
+end)
+
+-- Quét skill liên tục cho đến khi tìm được, sau đó chờ 7s và hiện banner
+task.spawn(function()
+	while not foundSkill do
+		for _, obj in ipairs(Replicated:GetDescendants()) do
+			if not foundSkill then checkSkill(obj) end
+		end
+		task.wait(0.2)
+	end
+	task.wait(7)
+	showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
+	if skillName == "Stalker" then
+		task.spawn(function()
+			local b = getBeast()
+			if b then watchLights(b) end
+		end)
 	end
 end)
