@@ -166,6 +166,7 @@ local foundBeast = false
 local skill = "Không rõ"
 local cooldownStart = nil
 local usedRunner = false
+local stalkerActive = false
 local labelCooldown = createCooldownUI()
 
 local function isBeast(p)
@@ -224,15 +225,18 @@ RunService.Heartbeat:Connect(function()
 	if foundBeast and beast and beast.Character then
 		local root = beast.Character:FindFirstChild("HumanoidRootPart")
 		local humanoid = beast.Character:FindFirstChild("Humanoid")
+
 		if humanoid then
 			if skill == "Runner" then
 				if humanoid.WalkSpeed > 19 then
 					usedRunner = true
 					cooldownStart = nil
 					labelCooldown.Text = "Cooldown: Đang sài Runner"
+
 				elseif usedRunner and humanoid.WalkSpeed <= 19 and not cooldownStart then
 					cooldownStart = tick()
 				end
+
 				if cooldownStart then
 					local remain = math.max(0, 22 - (tick() - cooldownStart))
 					if remain > 0 then
@@ -243,22 +247,40 @@ RunService.Heartbeat:Connect(function()
 						labelCooldown.Text = "Cooldown: Đã hồi"
 					end
 				end
-			elseif skill == "Stalker" and root and isOutsideCave(root.Position) then
+
+			end -- Kết thúc if skill == "Runner"
+
+			if skill == "stalker" and beast and beast.Character then
+				local anyLightOff = false
+
 				for _, o in ipairs(beast.Character:GetDescendants()) do
-					if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) and (not o.Enabled or o.Brightness == 0) then
-						labelCooldown.Text = "Cooldown: Đang sài Stalker"
-						task.wait(7)
-                                                local cd = tick()
-					        while tick() - cd < 20 do
-							local r = 20 - (tick() - cd)
-							labelCooldown.Text = string.format("Cooldown: %.1fs", r)
+					if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) then
+						if not o.Enabled or o.Brightness == 0 then
+							anyLightOff = true
+							break
+						end
+					end
+				end
+
+				if anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
+					stalkerActive = true
+					labelCooldown.Text = "Cooldown: Đang sài Stalker"
+
+					task.spawn(function()
+						task.wait(7) -- Thời gian hiệu lực skill
+						local start = tick()
+						while tick() - start < 20 do
+							local remain = 20 - (tick() - start)
+							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 							task.wait(0.1)
 						end
 						labelCooldown.Text = "Cooldown: Đã hồi"
-						break
-					end
+						stalkerActive = false
+					end)
 				end
-			end
-		end
-	end
+
+			end -- Kết thúc if skill == "stalker"
+
+		end -- Kết thúc if humanoid
+	end -- Kết thúc if foundBeast
 end)
