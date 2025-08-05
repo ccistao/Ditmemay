@@ -81,7 +81,9 @@ local function createCooldownUI()
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "BeastCooldownUI"
 	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true -- Cho phép kéo sát mọi góc
 	gui.Parent = player.PlayerGui
+
 	local frame = Instance.new("Frame")
 	frame.Name = "CooldownLabel"
 	frame.Size = UDim2.new(0,180,0,40)
@@ -90,6 +92,7 @@ local function createCooldownUI()
 	frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	frame.BorderSizePixel = 0
 	frame.Parent = gui
+
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1,0,1,0)
 	label.BackgroundTransparency = 1
@@ -99,25 +102,40 @@ local function createCooldownUI()
 	label.Text = "Cooldown: Chưa sài"
 	label.Parent = frame
 
-	-- Kéo được
+	-- Gán cho phần kéo
 	local dragging = false
 	local dragStart, startPos
-	frame.InputBegan:Connect(function(input)
+
+	local function startDrag(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
 			dragStart = input.Position
 			startPos = frame.Position
 			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then dragging = false end
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
 			end)
 		end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
+	end
+
+	local function updateDrag(input)
 		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 			local delta = input.Position - dragStart
-			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+			frame.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
 		end
-	end)
+	end
+
+	-- Gán cho cả frame và label để kéo được ở mọi chỗ
+	frame.InputBegan:Connect(startDrag)
+	label.InputBegan:Connect(startDrag)
+	UserInputService.InputChanged:Connect(updateDrag)
+
 	return label
 end
 
