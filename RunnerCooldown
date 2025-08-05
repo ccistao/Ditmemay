@@ -193,27 +193,13 @@ local function isBeast(p)
 end
 
 -- Theo dõi skill Beast
-local function detectSkill()
-	local Replicated = game:GetService("ReplicatedStorage")
-	local found = false
-	local function check(obj)
-		if obj:IsA("StringValue") or obj:IsA("BoolValue") then
-			local val = tostring(obj.Value):lower()
-			if val:find("runner") then
-				skill = "Runner"
-				found = true
-			elseif val:find("stalker") then
-				skill = "Stalker"
-				found = true
-			end
-		end
-	end
-	Replicated.DescendantAdded:Connect(function(obj)
-		if not found then check(obj) end
-	end)
-	for _, obj in ipairs(Replicated:GetDescendants()) do
-		if not found then check(obj) end
-	end
+local Replicated = game:GetService("ReplicatedStorage")
+local power = Replicated:WaitForChild("CurrentPower", 5)
+if power and power:IsA("StringValue") then
+	skill = power.Value:lower()
+	print("Đã phát hiện Beast skill:", skill)
+else
+	warn("Không tìm thấy CurrentPower!")
 end
 
 -- Quét Beast
