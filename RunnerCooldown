@@ -64,6 +64,9 @@ for _, name in ipairs({"BeastCooldownUI", "BeastBanner"}) do
 	if g then g:Destroy() end
 end
 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
+task.wait(1)
+
 --[[ VÙNG CAVE ]]
 local caveMin = Vector3.new(-275, -10, -275)
 local caveMax = Vector3.new(-179, 45, -179)
