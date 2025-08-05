@@ -242,8 +242,9 @@ RunService.Heartbeat:Connect(function()
 				for _, o in ipairs(beast.Character:GetDescendants()) do
 					if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) and (not o.Enabled or o.Brightness == 0) then
 						labelCooldown.Text = "Cooldown: Đang sài Stalker"
-						local cd = tick()
-						while tick() - cd < 20 do
+						task.wait(7)
+                                                local cd = tick()
+					        while tick() - cd < 20 do
 							local r = 20 - (tick() - cd)
 							labelCooldown.Text = string.format("Cooldown: %.1fs", r)
 							task.wait(0.1)
