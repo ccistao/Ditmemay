@@ -10,6 +10,7 @@ for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBann
 	local old = PlayerGui:FindFirstChild(name)
 	if old then old:Destroy() end
 end
+
 if _G.RunnerUsedConnection then _G.RunnerUsedConnection:Disconnect() end
 
 local function createRainbowBorder(frame)
@@ -25,7 +26,9 @@ local function createRainbowBorder(frame)
 	})
 	gradient.Rotation = 0
 	gradient.Parent = frame
-	_G.RunnerUsedConnection = RunService.RenderStepped:Connect(function()
+
+	if _G.RainbowConnection then _G.RainbowConnection:Disconnect() end
+	_G.RainbowConnection = RunService.RenderStepped:Connect(function()
 		if gradient then gradient.Rotation = (gradient.Rotation + 1) % 360 end
 	end)
 end
@@ -34,6 +37,7 @@ local function showBanner(text, name)
 	if PlayerGui:FindFirstChild(name) then return end
 	local gui = Instance.new("ScreenGui", PlayerGui)
 	gui.Name = name
+
 	local label = Instance.new("TextLabel", gui)
 	label.Size = UDim2.new(0, 250, 0, 40)
 	label.Position = UDim2.new(1, 10, 0, 10)
@@ -42,15 +46,20 @@ local function showBanner(text, name)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
 	label.Text = text
+
 	createRainbowBorder(label)
+
 	local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, -270, 0, 10)})
 	local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, 10, 0, 10)})
+
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
-	task.wait(3.4)
-	tweenOut:Play()
-	tweenOut.Completed:Wait()
-	gui:Destroy()
+
+	task.delay(3.4, function()
+		tweenOut:Play()
+		tweenOut.Completed:Wait()
+		gui:Destroy()
+	end)
 end
 
 local function getBeast()
@@ -75,7 +84,7 @@ local function watchLights(beast)
 
 		local lightWasOn = light.Enabled and light.Brightness > 0
 
-		while beast and beast.Character and light do
+		while beast and beast.Character and light and light.Parent do
 			local isNowOff = (not light.Enabled or light.Brightness == 0)
 			if lightWasOn and isNowOff then
 				showBanner("Beast đã dùng Q (Stalker) !!!", "StalkerUsedBanner")
@@ -106,19 +115,23 @@ local function startSkillScan()
 		end
 	end
 
-	local connection
-	connection = Replicated.DescendantAdded:Connect(function(obj)
+	if _G.SkillScanConnection then _G.SkillScanConnection:Disconnect() end
+	_G.SkillScanConnection = Replicated.DescendantAdded:Connect(function(obj)
 		if not foundSkill then task.defer(checkSkill, obj) end
 	end)
 
 	task.spawn(function()
-		while not foundSkill do
+		local timeout = 10
+		while not foundSkill and timeout > 0 do
 			for _, obj in ipairs(Replicated:GetDescendants()) do
 				if not foundSkill then checkSkill(obj) end
 			end
-			task.wait(0.2)
+			timeout -= 0.5
+			task.wait(0.5)
 		end
-		connection:Disconnect()
+
+		if _G.SkillScanConnection then _G.SkillScanConnection:Disconnect() end
+
 		showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
 		if skillName == "Stalker" then
 			local beast = getBeast()
@@ -129,12 +142,14 @@ end
 
 local lastBeast = nil
 local lastQ = false
+
 task.spawn(function()
 	while true do
 		local currentBeast = getBeast()
 		if currentBeast then
 			if currentBeast ~= lastBeast then
 				lastBeast = currentBeast
+				lastQ = false
 				startSkillScan()
 			end
 
