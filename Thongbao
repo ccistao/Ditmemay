@@ -69,10 +69,8 @@ end
 
 -- Theo dõi skill Stalker
 local function watchLights(beast)
-	local lightWatcherRunning = false
 	task.spawn(function()
 		local light
-		-- Chờ ánh sáng xuất hiện
 		repeat
 			if beast and beast.Character then
 				light = beast.Character:FindFirstChildWhichIsA("PointLight", true)
@@ -96,14 +94,61 @@ local function watchLights(beast)
 	end)
 end
 
--- Theo dõi Runner dùng Q
-local beast = nil
+-- Quét skill Beast chọn
+local function startSkillScan()
+	local foundSkill = false
+	local skillName = "Không rõ"
+
+	local function checkSkill(obj)
+		if obj:IsA("StringValue") or obj:IsA("BoolValue") then
+			local val = tostring(obj.Value):lower()
+			if val:find("runner") then
+				skillName = "Runner"
+				foundSkill = true
+			elseif val:find("stalker") then
+				skillName = "Stalker"
+				foundSkill = true
+			end
+		end
+	end
+
+	-- Theo dõi ReplicatedStorage để quét skill
+	local connection
+	connection = Replicated.DescendantAdded:Connect(function(obj)
+		if not foundSkill then task.defer(checkSkill, obj) end
+	end)
+
+	task.spawn(function()
+		while not foundSkill do
+			for _, obj in ipairs(Replicated:GetDescendants()) do
+				if not foundSkill then checkSkill(obj) end
+			end
+			task.wait(0.2)
+		end
+		connection:Disconnect()
+		task.wait(7)
+		showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
+		if skillName == "Stalker" then
+			local beast = getBeast()
+			if beast then watchLights(beast) end
+		end
+	end)
+end
+
+-- Theo dõi Runner dùng Q + Detect Beast đổi mỗi 3s
+local lastBeast = nil
 local lastQ = false
 task.spawn(function()
 	while true do
-		beast = getBeast()
-		if beast and beast.Character then
-			local humanoid = beast.Character:FindFirstChild("Humanoid")
+		local currentBeast = getBeast()
+		if currentBeast then
+			-- Nếu Beast mới → reset quét skill
+			if currentBeast ~= lastBeast then
+				lastBeast = currentBeast
+				startSkillScan()
+			end
+
+			local humanoid = currentBeast.Character and currentBeast.Character:FindFirstChild("Humanoid")
 			if humanoid then
 				local speed = humanoid.WalkSpeed
 				if speed > 19 and not lastQ then
@@ -114,45 +159,6 @@ task.spawn(function()
 				end
 			end
 		end
-		task.wait(0.05)
-	end
-end)
-
--- Quét skill Beast chọn
-local foundSkill = false
-local skillName = "Không rõ"
-local function checkSkill(obj)
-	if obj:IsA("StringValue") or obj:IsA("BoolValue") then
-		local val = tostring(obj.Value):lower()
-		if val:find("runner") then
-			skillName = "Runner"
-			foundSkill = true
-		elseif val:find("stalker") then
-			skillName = "Stalker"
-			foundSkill = true
-		end
-	end
-end
-
--- Theo dõi ReplicatedStorage để quét skill
-Replicated.DescendantAdded:Connect(function(obj)
-	if not foundSkill then task.defer(checkSkill, obj) end
-end)
-
--- Quét skill liên tục cho đến khi tìm được, sau đó chờ 7s và hiện banner
-task.spawn(function()
-	while not foundSkill do
-		for _, obj in ipairs(Replicated:GetDescendants()) do
-			if not foundSkill then checkSkill(obj) end
-		end
-		task.wait(0.2)
-	end
-	task.wait(7)
-	showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
-	if skillName == "Stalker" then
-		task.spawn(function()
-			local b = getBeast()
-			if b then watchLights(b) end
-		end)
+		task.wait(3)
 	end
 end)
