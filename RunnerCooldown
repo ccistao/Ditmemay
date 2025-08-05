@@ -205,6 +205,7 @@ task.spawn(function()
                 if beast and not isBeast(beast) then
                  foundBeast = false
                  beast = nil
+                 skill = "Đéo biết"
                 end
 		for _, p in ipairs(Players:GetPlayers()) do
 			if isBeast(p) then
