@@ -137,6 +137,10 @@ frame.InputEnded:Connect(stopDrag)
 label.InputBegan:Connect(startDrag)
 label.InputEnded:Connect(stopDrag)
 UserInputService.InputChanged:Connect(updateDrag)
+
+return label
+end
+
 --[[ BANNER BEAST ]]
 local function showBeastFoundBanner()
 	local gui = Instance.new("ScreenGui", player.PlayerGui)
