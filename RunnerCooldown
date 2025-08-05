@@ -90,7 +90,8 @@ local function createCooldownUI()
 	frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 	frame.BorderSizePixel = 0
 	frame.Parent = gui
-
+        frame.Active = true
+      
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1,0,1,0)
 	label.BackgroundTransparency = 1
@@ -99,43 +100,43 @@ local function createCooldownUI()
 	label.TextScaled = true
 	label.Text = "Cooldown: Chưa sài"
 	label.Parent = frame
+        label.Active = true
 
-	-- Gán cho phần kéo
-	local dragging = false
-	local dragStart, startPos
+        -- Gán cho phần kéo
+local dragging = false
+local dragStart, startPos
 
-	local function startDrag(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			dragStart = input.Position
-			startPos = frame.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
+local function startDrag(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
 	end
-
-	local function updateDrag(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			local delta = input.Position - dragStart
-			frame.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
-			)
-		end
-	end
-
-	frame.InputBegan:Connect(startDrag)
-	label.InputBegan:Connect(startDrag)
-	UserInputService.InputChanged:Connect(updateDrag)
-
-	return label
 end
 
+local function stopDrag(input)
+	if input.UserInputState == Enum.UserInputState.End then
+		dragging = false
+	end
+end
+
+local function updateDrag(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end
+
+frame.InputBegan:Connect(startDrag)
+frame.InputEnded:Connect(stopDrag)
+label.InputBegan:Connect(startDrag)
+label.InputEnded:Connect(stopDrag)
+UserInputService.InputChanged:Connect(updateDrag)
 --[[ BANNER BEAST ]]
 local function showBeastFoundBanner()
 	local gui = Instance.new("ScreenGui", player.PlayerGui)
