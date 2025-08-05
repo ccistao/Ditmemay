@@ -166,6 +166,7 @@ local foundBeast = false
 local skill = "Không rõ"
 local cooldownStart = nil
 local usedRunner = false
+local stalkerInUse = false
 local labelCooldown = createCooldownUI()
 
 local function isBeast(p)
