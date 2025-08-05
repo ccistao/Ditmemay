@@ -183,7 +183,6 @@ local cooldownStart = nil
 local usedRunner = false
 local stalkerActive = false
 local labelCooldown = createCooldownUI()
-detectSkill()
 
 local function isBeast(p)
 	local stats = p:FindFirstChild("TempPlayerStatsModule")
@@ -212,6 +211,7 @@ local function detectSkill()
 		skill = power.Value:lower()
 	end)
 end
+detectSkill()
 
 -- Quét Beast
 task.spawn(function()
