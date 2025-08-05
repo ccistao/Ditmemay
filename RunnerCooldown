@@ -241,7 +241,7 @@ RunService.Heartbeat:Connect(function()
 		local humanoid = beast.Character:FindFirstChild("Humanoid")
 
 		if humanoid then
-			if skill == "Runner" then
+			if skill == "runner" then
 				if humanoid.WalkSpeed > 19 then
 					usedRunner = true
 					cooldownStart = nil
