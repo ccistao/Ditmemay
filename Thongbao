@@ -92,7 +92,7 @@ local function watchLights(beast)
 		while beast and beast.Character and light and light.Parent do
 			local isNowOff = (not light.Enabled or light.Brightness == 0)
 			if lightWasOn and isNowOff then
-				showBanner("Beast đã dùng Q (Stalker) !!!", "StalkerUsedBanner")
+				showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
 				repeat task.wait(0.1) until light.Enabled and light.Brightness > 0
 				lightWasOn = true
 			else
@@ -106,7 +106,7 @@ end
 -- Quét skill của Beast khi vào trận
 local function startSkillScan()
 	local foundSkill = false
-	local skillName = "Không rõ"
+	local skillName = "Unknown"
 
 	local function checkSkill(obj)
 		if obj:IsA("StringValue") or obj:IsA("BoolValue") then
@@ -139,7 +139,7 @@ local function startSkillScan()
 		if _G.SkillScanConnection then _G.SkillScanConnection:Disconnect() end
 
 		-- Hiện thông báo ngay khi tìm thấy skill
-		showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
+		showBanner("Beast chose " .. skillName, "SkillChosenBanner")
 		if skillName == "Stalker" then
 			local beast = getBeast()
 			if beast then watchLights(beast) end
@@ -182,7 +182,7 @@ task.spawn(function()
 					local speed = humanoid.WalkSpeed
 					if speed > 19 and not lastQ then
 						lastQ = true
-						showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
+						showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
 					elseif speed <= 19 then
 						lastQ = false
 					end
