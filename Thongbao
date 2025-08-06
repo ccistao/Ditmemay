@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Xóa banner cũ
 for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner"}) do
 	local old = PlayerGui:FindFirstChild(name)
 	if old then old:Destroy() end
@@ -13,6 +14,7 @@ end
 
 if _G.RunnerUsedConnection then _G.RunnerUsedConnection:Disconnect() end
 
+-- Viền cầu vồng cho banner
 local function createRainbowBorder(frame)
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
@@ -33,6 +35,7 @@ local function createRainbowBorder(frame)
 	end)
 end
 
+-- Banner hiển thị thông báo
 local function showBanner(text, name)
 	if PlayerGui:FindFirstChild(name) then return end
 	local gui = Instance.new("ScreenGui", PlayerGui)
@@ -62,6 +65,7 @@ local function showBanner(text, name)
 	end)
 end
 
+-- Lấy Beast hiện tại
 local function getBeast()
 	for _, player in ipairs(Players:GetPlayers()) do
 		local stats = player:FindFirstChild("TempPlayerStatsModule")
@@ -72,6 +76,7 @@ local function getBeast()
 	return nil
 end
 
+-- Theo dõi khi Beast dùng Stalker
 local function watchLights(beast)
 	task.spawn(function()
 		local light
@@ -98,6 +103,7 @@ local function watchLights(beast)
 	end)
 end
 
+-- Quét skill của Beast khi vào trận
 local function startSkillScan()
 	local foundSkill = false
 	local skillName = "Không rõ"
@@ -132,27 +138,42 @@ local function startSkillScan()
 
 		if _G.SkillScanConnection then _G.SkillScanConnection:Disconnect() end
 
-		task.delay(5, function()
-                 showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
-		end)
-                if skillName == "Stalker" then
+		-- Hiện thông báo ngay khi tìm thấy skill
+		showBanner("Beast đã chọn skill: " .. skillName, "SkillChosenBanner")
+		if skillName == "Stalker" then
 			local beast = getBeast()
 			if beast then watchLights(beast) end
 		end
 	end)
 end
 
+-- Vòng lặp chính
 local lastBeast = nil
 local lastQ = false
+local lastGameActive = false
 
 task.spawn(function()
 	while true do
+		local isGameActive = false
+		local gameStatus = Replicated:FindFirstChild("IsGameActive")
+		if gameStatus and gameStatus:IsA("BoolValue") then
+			isGameActive = gameStatus.Value
+		end
+
+		-- Khi trận mới bắt đầu
+		if isGameActive and not lastGameActive then
+			lastBeast = nil
+			lastQ = false
+			startSkillScan()
+		end
+		lastGameActive = isGameActive
+
+		-- Kiểm tra Beast và skill Runner dùng Q
 		local currentBeast = getBeast()
 		if currentBeast then
 			if currentBeast ~= lastBeast then
 				lastBeast = currentBeast
 				lastQ = false
-				startSkillScan()
 			end
 
 			if currentBeast.Character then
@@ -168,6 +189,7 @@ task.spawn(function()
 				end
 			end
 		end
+
 		task.wait(0.05)
 	end
 end)
