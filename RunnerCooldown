@@ -222,16 +222,28 @@ detectSkill()
 task.spawn(function()
 	while true do
 		task.wait(3)
-                if beast and not isBeast(beast) then
-                 foundBeast = false
-                 beast = nil
-                 skill = "Đéo biết"
-                end
+		-- Nếu beast cũ không còn là Beast nữa => reset biến
+		if beast and not isBeast(beast) then
+			foundBeast = false
+			beast = nil
+			skill = "Đéo biết"
+			usedRunner = false
+			stalkerActive = false
+			cooldownStart = nil
+			labelCooldown.Text = "Cooldown: Chưa sài"
+		end
+
+		-- Tìm Beast mới
 		for _, p in ipairs(Players:GetPlayers()) do
 			if isBeast(p) then
-				if not foundBeast then
+				if not foundBeast or p ~= beast then
 					beast = p
 					foundBeast = true
+					skill = "Không rõ"
+					usedRunner = false
+					stalkerActive = false
+					cooldownStart = nil
+					labelCooldown.Text = "Cooldown: Cập nhật lại trạng thái"
 					showBeastFoundBanner()
 				end
 			end
