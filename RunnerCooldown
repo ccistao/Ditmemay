@@ -98,7 +98,7 @@ local function createCooldownUI()
 	label.TextColor3 = Color3.new(1,1,1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
-	label.Text = "PERK READY!!!"
+	label.Text = "Cooldown:...."
 	label.Parent = frame
         label.Active = true
 
@@ -240,7 +240,7 @@ task.spawn(function()
 					usedRunner = false
 					stalkerActive = false
 					cooldownStart = nil
-					labelCooldown.Text = "PERK READY!!!"
+					labelCooldown.Text = "Cooldown:Perk Ready!!!"
 					detectSkill()
                                         showBeastFoundBanner()
 				end
@@ -273,7 +273,7 @@ RunService.Heartbeat:Connect(function()
 					else
 						cooldownStart = nil
 						usedRunner = false
-						labelCooldown.Text = "RUNNER READY!!!"
+						labelCooldown.Text = "Cooldown: Runner Ready!!!"
 					end
 				end
 
@@ -303,7 +303,7 @@ RunService.Heartbeat:Connect(function()
 							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 							task.wait(0.1)
 						end
-						labelCooldown.Text = "STALKER READY!!!"
+						labelCooldown.Text = "Cooldown: Stalker Ready!!!"
 						stalkerActive = false
 					end)
 				end
