@@ -36,8 +36,8 @@ local function createText(text, yOffset, textSize)
 	return label
 end
 
-local mainText = createText("script made by zerodepchai", -35, 38)
-local subText = createText("ver 4.0.0 beta", 10, 26)
+local mainText = createText("script made by ftf players", -35, 38)
+local subText = createText("ver 4.0.1 beta", 10, 26)
 
 local function fadeIn(label)
 	local tween = TweenService:Create(label, TweenInfo.new(1.5), {TextTransparency = 0})
@@ -98,7 +98,7 @@ local function createCooldownUI()
 	label.TextColor3 = Color3.new(1,1,1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
-	label.Text = "Cooldown: Chưa sài"
+	label.Text = "PERK READY!!!"
 	label.Parent = frame
         label.Active = true
 
@@ -152,7 +152,7 @@ local function showBeastFoundBanner()
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.SourceSansBold
 	label.TextScaled = true
-	label.Text = "Đã tìm thấy Beast !!!"
+	label.Text = "Beast found!!!"
 	label.BorderSizePixel = 2
 
 	local colors = {
@@ -183,7 +183,7 @@ end
 --[[ MAIN ]]
 local beast = nil
 local foundBeast = false
-local skill = "Không rõ"
+local skill = "Unknown"
 local cooldownStart = nil
 local usedRunner = false
 local stalkerActive = false
@@ -227,7 +227,7 @@ task.spawn(function()
 			usedRunner = false
 			stalkerActive = false
 			cooldownStart = nil
-			labelCooldown.Text = "Cooldown: Chưa sài"
+			labelCooldown.Text = "PERK READY!!!"
 		end
 
 		-- Tìm Beast mới
@@ -240,7 +240,7 @@ task.spawn(function()
 					usedRunner = false
 					stalkerActive = false
 					cooldownStart = nil
-					labelCooldown.Text = "Cooldown: Cập nhật lại trạng thái"
+					labelCooldown.Text = "PERK READY!!!"
 					detectSkill()
                                         showBeastFoundBanner()
 				end
@@ -260,7 +260,7 @@ RunService.Heartbeat:Connect(function()
 				if humanoid.WalkSpeed > 19 then
 					usedRunner = true
 					cooldownStart = nil
-					labelCooldown.Text = "Cooldown: Đang sài Runner"
+					labelCooldown.Text = "Using Runner"
 
 				elseif usedRunner and humanoid.WalkSpeed <= 19 and not cooldownStart then
 					cooldownStart = tick()
@@ -273,7 +273,7 @@ RunService.Heartbeat:Connect(function()
 					else
 						cooldownStart = nil
 						usedRunner = false
-						labelCooldown.Text = "Cooldown: Đã hồi"
+						labelCooldown.Text = "RUNNER READY!!!"
 					end
 				end
 
@@ -293,7 +293,7 @@ RunService.Heartbeat:Connect(function()
 
 				if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
 					stalkerActive = true
-					labelCooldown.Text = "Cooldown: Đang sài Stalker"
+					labelCooldown.Text = "Using Stalker"
 
 					task.spawn(function()
 						task.wait(7) -- Thời gian hiệu lực skill
@@ -303,7 +303,7 @@ RunService.Heartbeat:Connect(function()
 							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 							task.wait(0.1)
 						end
-						labelCooldown.Text = "Cooldown: Đã hồi"
+						labelCooldown.Text = "STALKER READY!!!"
 						stalkerActive = false
 					end)
 				end
