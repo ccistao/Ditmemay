@@ -198,25 +198,22 @@ end
 local Replicated = game:GetService("ReplicatedStorage")
 
 local function detectSkill()
-	local power
-	repeat
-		power = Replicated:FindFirstChild("CurrentPower")
-		if not power then
-			task.wait(1)
-		end
-	until power ~= nil
+	task.spawn(function()
+		local power
+		repeat
+			power = Replicated:FindFirstChild("CurrentPower")
+			task.wait(0.5)
+		until power and power:IsA("StringValue")
 
-	if power:IsA("StringValue") then
+		-- Cập nhật ngay khi tìm thấy
 		skill = power.Value:lower()
-	else
-		return
-	end
 
-	power:GetPropertyChangedSignal("Value"):Connect(function()
-		skill = power.Value:lower()
+		-- Luôn lắng nghe thay đổi
+		power:GetPropertyChangedSignal("Value"):Connect(function()
+			skill = power.Value:lower()
+		end)
 	end)
 end
-detectSkill()
 
 -- Quét Beast
 task.spawn(function()
@@ -244,7 +241,8 @@ task.spawn(function()
 					stalkerActive = false
 					cooldownStart = nil
 					labelCooldown.Text = "Cooldown: Cập nhật lại trạng thái"
-					showBeastFoundBanner()
+					detectSkill()
+                                        showBeastFoundBanner()
 				end
 			end
 		end
