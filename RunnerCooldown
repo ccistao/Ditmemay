@@ -249,76 +249,77 @@ task.spawn(function()
 	end
 end)
 
--- Theo dõi cooldown (ĐÃ FIX TOÀN BỘ)
+-- Theo dõi cooldown (phiên bản đếm ngược CHUẨN)
 RunService.Heartbeat:Connect(function()
 	if foundBeast and beast and beast.Character then
-		local humanoid = beast.Character:FindFirstChild("Humanoid")
 		local root = beast.Character:FindFirstChild("HumanoidRootPart")
+		local humanoid = beast.Character:FindFirstChild("Humanoid")
 
-		if not humanoid or not root then return end
-
-		-- RUNNER
-		if skill == "runner" then
-			if humanoid.WalkSpeed > 19 and not usedRunner then
-				usedRunner = true
-				cooldownStart = nil
-				local startTime = tick()
-
-				task.spawn(function()
-					while humanoid and humanoid.WalkSpeed > 19 and tick() - startTime < 3 do
-						local elapsed = tick() - startTime
-						labelCooldown.Text = string.format("Using Runner (%.1fs)", math.min(0, 3 - elapsed))
-						task.wait(0.1)
-					end
-
-					cooldownStart = tick()
-					while tick() - cooldownStart < 22 do
-						local remain = 22 - (tick() - cooldownStart)
-						labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
-						task.wait(0.1)
-					end
-
-					labelCooldown.Text = "Cooldown: Runner Ready!!!"
-					usedRunner = false
+		if humanoid then
+			if skill == "runner" then
+				if humanoid.WalkSpeed > 19 and not usedRunner then
+					usedRunner = true
 					cooldownStart = nil
-				end)
-			end
-		end
 
-		-- STALKER
-		if skill == "stalker" and not stalkerActive then
-			local anyLightOff = false
+					local start = tick()
+					task.spawn(function()
+						repeat
+							local elapsed = tick() - start
+							local remain = math.max(0, 3 - elapsed)
+							labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
+							task.wait(0.1)
+						until remain <= 0 or humanoid.WalkSpeed <= 19
+					end)
+				elseif usedRunner and humanoid.WalkSpeed <= 19 and not cooldownStart then
+					cooldownStart = tick()
+				end
 
-			for _, o in ipairs(beast.Character:GetDescendants()) do
-				if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) then
-					if not o.Enabled or o.Brightness == 0 then
-						anyLightOff = true
-						break
+				if cooldownStart then
+					local remain = math.max(0, 22 - (tick() - cooldownStart))
+					if remain > 0 then
+						labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
+					else
+						cooldownStart = nil
+						usedRunner = false
+						labelCooldown.Text = "Cooldown: Runner Ready!!!"
 					end
 				end
-			end
 
-			if anyLightOff and isOutsideCave(root.Position) then
-				stalkerActive = true
+			elseif skill == "stalker" then
+				local anyLightOff = false
 
-				task.spawn(function()
-					local startUse = tick()
-					while tick() - startUse < 7 do
-						local activeTime = tick() - startUse
-						labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.min(0, 7 - activeTime))
-						task.wait(0.1)
+				for _, o in ipairs(beast.Character:GetDescendants()) do
+					if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) then
+						if not o.Enabled or o.Brightness == 0 then
+							anyLightOff = true
+							break
+						end
 					end
+				end
 
-					local cooldown = tick()
-					while tick() - cooldown < 20 do
-						local remain = 20 - (tick() - cooldown)
-						labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
-						task.wait(0.1)
-					end
+				if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
+					stalkerActive = true
+					task.spawn(function()
+						local startUse = tick()
+						repeat
+							local elapsed = tick() - startUse
+							local remain = math.max(0, 7 - elapsed)
+							labelCooldown.Text = string.format("Using Stalker (%.1fs)", remain)
+							task.wait(0.1)
+						until remain <= 0
 
-					labelCooldown.Text = "Cooldown: Stalker Ready!!!"
-					stalkerActive = false
-				end)
+						local startCooldown = tick()
+						repeat
+							local elapsed = tick() - startCooldown
+							local remain = math.max(0, 20 - elapsed)
+							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
+							task.wait(0.1)
+						until remain <= 0
+
+						labelCooldown.Text = "Cooldown: Stalker Ready!!!"
+						stalkerActive = false
+					end)
+				end
 			end
 		end
 	end
