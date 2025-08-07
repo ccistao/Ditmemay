@@ -37,7 +37,7 @@ local function createText(text, yOffset, textSize)
 end
 
 local mainText = createText("script made by ftf players", -35, 38)
-local subText = createText("ver 4.0.1 beta", 10, 26)
+local subText = createText("ver 4.0.2 beta", 10, 26)
 
 local function fadeIn(label)
 	local tween = TweenService:Create(label, TweenInfo.new(1.5), {TextTransparency = 0})
@@ -257,10 +257,19 @@ RunService.Heartbeat:Connect(function()
 
 		if humanoid then
 			if skill == "runner" then
-				if humanoid.WalkSpeed > 19 then
-					usedRunner = true
-					cooldownStart = nil
-					labelCooldown.Text = "Using Runner"
+				if humanoid.WalkSpeed > 19 and not usedRunner then
+	usedRunner = true
+	cooldownStart = nil
+
+	local start = tick()
+	task.spawn(function()
+		while humanoid.WalkSpeed > 19 and tick() - start < 3 do
+			local activeTime = tick() - start
+			labelCooldown.Text = string.format("Using Runner (%.1fs)", math.min(3, activeTime))
+			task.wait(0.1)
+		end
+	end)
+end
 
 				elseif usedRunner and humanoid.WalkSpeed <= 19 and not cooldownStart then
 					cooldownStart = tick()
@@ -293,10 +302,13 @@ RunService.Heartbeat:Connect(function()
 
 				if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
 					stalkerActive = true
-					labelCooldown.Text = "Using Stalker"
-
 					task.spawn(function()
-						task.wait(7) -- Thời gian hiệu lực skill
+	local startUse = tick()
+	while tick() - startUse < 7 do
+		local activeTime = tick() - startUse
+		labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.min(7, activeTime))
+		task.wait(0.1)
+	end -- Thời gian hiệu lực skill
 						local start = tick()
 						while tick() - start < 20 do
 							local remain = 20 - (tick() - start)
