@@ -267,7 +267,7 @@ RunService.Heartbeat:Connect(function()
 				task.spawn(function()
 					while humanoid and humanoid.WalkSpeed > 19 and tick() - startTime < 3 do
 						local elapsed = tick() - startTime
-						labelCooldown.Text = string.format("Using Runner (%.1fs)", math.min(3, elapsed))
+						labelCooldown.Text = string.format("Using Runner (%.1fs)", math.min(0, 3 - elapsed))
 						task.wait(0.1)
 					end
 
@@ -305,7 +305,7 @@ RunService.Heartbeat:Connect(function()
 					local startUse = tick()
 					while tick() - startUse < 7 do
 						local activeTime = tick() - startUse
-						labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.min(7, activeTime))
+						labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.min(0, 7 - activeTime))
 						task.wait(0.1)
 					end
 
