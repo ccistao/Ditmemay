@@ -240,7 +240,7 @@ task.spawn(function()
 					usedRunner = false
 					stalkerActive = false
 					cooldownStart = nil
-					labelCooldown.Text = "Cooldown:Perk Ready!!!"
+					labelCooldown.Text = "Cooldown: Perk Ready!!!"
 					detectSkill()
                                         showBeastFoundBanner()
 				end
