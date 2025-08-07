@@ -308,7 +308,7 @@ end
 		local activeTime = tick() - startUse
 		labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.min(7, activeTime))
 		task.wait(0.1)
-	end -- Thời gian hiệu lực skill
+	end
 						local start = tick()
 						while tick() - start < 20 do
 							local remain = 20 - (tick() - start)
