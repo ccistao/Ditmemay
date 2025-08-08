@@ -1,20 +1,19 @@
-local Players = game:GetService("Players")
-local Replicated = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local Players, Replicated, TweenService, RunService =
+	game:GetService("Players"),
+	game:GetService("ReplicatedStorage"),
+	game:GetService("TweenService"),
+	game:GetService("RunService")
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local LocalPlayer, PlayerGui = Players.LocalPlayer, Players.LocalPlayer:WaitForChild("PlayerGui")
 
 -- Xóa banner cũ
 for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner"}) do
 	local old = PlayerGui:FindFirstChild(name)
 	if old then old:Destroy() end
 end
-
 if _G.RunnerUsedConnection then _G.RunnerUsedConnection:Disconnect() end
 
--- Viền cầu vồng cho banner
+-- Viền cầu vồng
 local function createRainbowBorder(frame)
 	local gradient = Instance.new("UIGradient")
 	gradient.Color = ColorSequence.new({
@@ -35,20 +34,16 @@ local function createRainbowBorder(frame)
 	end)
 end
 
--- Banner hiển thị thông báo
+-- Banner
 local function showBanner(text, name)
 	if PlayerGui:FindFirstChild(name) then return end
 	local gui = Instance.new("ScreenGui", PlayerGui)
 	gui.Name = name
 
 	local label = Instance.new("TextLabel", gui)
-	label.Size = UDim2.new(0, 250, 0, 40)
-	label.Position = UDim2.new(1, 10, 0, 10)
-	label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Font = Enum.Font.SourceSansBold
-	label.TextScaled = true
-	label.Text = text
+	label.Size, label.Position = UDim2.new(0, 250, 0, 40), UDim2.new(1, 10, 0, 10)
+	label.BackgroundColor3, label.TextColor3 = Color3.fromRGB(30, 30, 30), Color3.new(1, 1, 1)
+	label.Font, label.TextScaled, label.Text = Enum.Font.SourceSansBold, true, text
 
 	createRainbowBorder(label)
 
@@ -57,7 +52,6 @@ local function showBanner(text, name)
 
 	tweenIn:Play()
 	tweenIn.Completed:Wait()
-
 	task.delay(3.4, function()
 		tweenOut:Play()
 		tweenOut.Completed:Wait()
@@ -65,7 +59,7 @@ local function showBanner(text, name)
 	end)
 end
 
--- Lấy Beast hiện tại
+-- Lấy Beast
 local function getBeast()
 	for _, player in ipairs(Players:GetPlayers()) do
 		local stats = player:FindFirstChild("TempPlayerStatsModule")
@@ -73,10 +67,9 @@ local function getBeast()
 			return player
 		end
 	end
-	return nil
 end
 
--- Theo dõi khi Beast dùng Stalker
+-- Theo dõi Stalker
 local function watchLights(beast)
 	task.spawn(function()
 		local light
@@ -85,38 +78,32 @@ local function watchLights(beast)
 				light = beast.Character:FindFirstChildWhichIsA("PointLight", true)
 			end
 			task.wait(0.1)
-		until light and light:IsDescendantOf(workspace)
+		until light
 
 		local lightWasOn = light.Enabled and light.Brightness > 0
-
 		while beast and beast.Character and light and light.Parent do
-			local isNowOff = (not light.Enabled or light.Brightness == 0)
+			local isNowOff = not light.Enabled or light.Brightness == 0
 			if lightWasOn and isNowOff then
 				showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
 				repeat task.wait(0.1) until light.Enabled and light.Brightness > 0
-				lightWasOn = true
-			else
-				lightWasOn = light.Enabled and light.Brightness > 0
 			end
+			lightWasOn = light.Enabled and light.Brightness > 0
 			task.wait(0.1)
 		end
 	end)
 end
 
--- Quét skill của Beast khi vào trận
+-- Quét skill
 local function startSkillScan()
-	local foundSkill = false
-	local skillName = "Unknown"
+	local foundSkill, skillName = false, "Unknown"
 
 	local function checkSkill(obj)
 		if obj:IsA("StringValue") or obj:IsA("BoolValue") then
 			local val = tostring(obj.Value):lower()
 			if val:find("stalker") then
-				skillName = "Stalker"
-				foundSkill = true
+				skillName, foundSkill = "Stalker", true
 			elseif val:find("runner") then
-				skillName = "Runner"
-				foundSkill = true
+				skillName, foundSkill = "Runner", true
 			end
 		end
 	end
@@ -135,10 +122,8 @@ local function startSkillScan()
 			timeout -= 0.5
 			task.wait(0.5)
 		end
-
 		if _G.SkillScanConnection then _G.SkillScanConnection:Disconnect() end
 
-		-- Hiện thông báo ngay khi tìm thấy skill
 		showBanner("Beast chose " .. skillName, "SkillChosenBanner")
 		if skillName == "Stalker" then
 			local beast = getBeast()
@@ -147,49 +132,33 @@ local function startSkillScan()
 	end)
 end
 
--- Vòng lặp chính
-local lastBeast = nil
-local lastQ = false
-local lastGameActive = false
-
+-- Main
+local lastBeast, lastQ, lastGameActive = nil, false, false
 task.spawn(function()
 	while true do
-		local isGameActive = false
 		local gameStatus = Replicated:FindFirstChild("IsGameActive")
-		if gameStatus and gameStatus:IsA("BoolValue") then
-			isGameActive = gameStatus.Value
-		end
+		local isGameActive = gameStatus and gameStatus:IsA("BoolValue") and gameStatus.Value
 
-		-- Khi trận mới bắt đầu
 		if isGameActive and not lastGameActive then
-			lastBeast = nil
-			lastQ = false
+			lastBeast, lastQ = nil, false
 			startSkillScan()
 		end
 		lastGameActive = isGameActive
 
-		-- Kiểm tra Beast và skill Runner dùng Q
 		local currentBeast = getBeast()
 		if currentBeast then
-			if currentBeast ~= lastBeast then
-				lastBeast = currentBeast
-				lastQ = false
-			end
-
-			if currentBeast.Character then
-				local humanoid = currentBeast.Character:FindFirstChild("Humanoid")
-				if humanoid then
-					local speed = humanoid.WalkSpeed
-					if speed > 19 and not lastQ then
-						lastQ = true
-						showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
-					elseif speed <= 19 then
-						lastQ = false
-					end
+			if currentBeast ~= lastBeast then lastBeast, lastQ = currentBeast, false end
+			local humanoid = currentBeast.Character and currentBeast.Character:FindFirstChild("Humanoid")
+			if humanoid then
+				local speed = humanoid.WalkSpeed
+				if speed > 19 and not lastQ then
+					lastQ = true
+					showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+				elseif speed <= 19 then
+					lastQ = false
 				end
 			end
 		end
-
 		task.wait(0.05)
 	end
 end)
