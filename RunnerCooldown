@@ -256,110 +256,116 @@ local foundTextState = 0
 local lastBeast = nil
 local justFoundBeast = false
 local foundTime = 0
-local sessionId = 0
+local searchingLoop = true
 
 RunService.Heartbeat:Connect(function()
-	if foundBeast and beast and beast.Character then
-		if beast ~= lastBeast then
+	if not foundBeast then
+		if tick() - tickTime >= 0.5 then
+			foundTextState = (foundTextState % 3) + 1
+			local dots = string.rep(".", foundTextState)
+			labelCooldown.Text = "Cooldown: Find new beast" .. dots
+			tickTime = tick()
+		end
+	else
+		if searchingLoop then
+			searchingLoop = false
+			labelCooldown.Text = "Cooldown: Found beast!!!"
+			task.delay(1.5, function()
+				if foundBeast then
+					labelCooldown.Text = "Cooldown: Perk Ready!!!"
+				end
+			end)
+		end
+
+		if beast and beast ~= lastBeast then
 			justFoundBeast = true
 			foundTime = tick()
 			lastBeast = beast
 		end
 
-		local root = beast.Character:FindFirstChild("HumanoidRootPart")
-		local humanoid = beast.Character:FindFirstChild("Humanoid")
+		local humanoid = beast.Character and beast.Character:FindFirstChild("Humanoid")
+		local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
 
-		if humanoid and humanoid.Parent then
-			if skill == "runner" then
-				if humanoid.WalkSpeed > 19 and not usedRunner then
-					usedRunner = true
+		if humanoid and skill == "runner" then
+			if humanoid.WalkSpeed > 19 and not usedRunner then
+				usedRunner = true
+				cooldownStart = nil
+				local startUse = tick()
+				local currentSession = sessionId
+
+				task.spawn(function()
+					repeat
+						local remain = math.max(0, 3 - (tick() - startUse))
+						labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
+						task.wait(0.1)
+						if sessionId ~= currentSession then return end
+					until remain <= 0
+					cooldownStart = tick()
+				end)
+			end
+
+			if cooldownStart then
+				local remain = math.max(0, 22 - (tick() - cooldownStart))
+				if remain > 0 then
+					labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
+				else
 					cooldownStart = nil
-					local startUse = tick()
-					local currentSession = sessionId
-
-					task.spawn(function()
-						repeat
-							local remain = math.max(0, 3 - (tick() - startUse))
-							labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
-							task.wait(0.1)
-							if sessionId ~= currentSession then return end
-						until remain <= 0
-						cooldownStart = tick()
-					end)
+					usedRunner = false
+					labelCooldown.Text = "Cooldown: Perk Ready!!!"
 				end
+			end
 
-				if cooldownStart then
-					local remain = math.max(0, 22 - (tick() - cooldownStart))
-					if remain > 0 then
-						labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
-					else
-						cooldownStart = nil
-						usedRunner = false
-						labelCooldown.Text = "Cooldown: Perk Ready!!!"
-					end
-				elseif not usedRunner then
-					if justFoundBeast and tick() - foundTime <= 1.5 then
-						labelCooldown.Text = "Cooldown: Beast Detected !!!"
-					else
-						justFoundBeast = false
-						if tick() - tickTime >= 0.5 then
-							foundTextState = (foundTextState % 3) + 1
-							local dots = string.rep(".", foundTextState)
-							labelCooldown.Text = "Cooldown: Found new beast" .. dots
-							tickTime = tick()
-						end
-					end
-				end
-
-			elseif skill == "stalker" then
-				local anyLightOff = false
-
-				for _, o in ipairs(beast.Character:GetDescendants()) do
-					if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) then
-						if not o.Enabled or o.Brightness == 0 then
-							anyLightOff = true
-							break
-						end
-					end
-				end
-
-				if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
-					stalkerActive = true
-					local currentSession = sessionId
-					task.spawn(function()
-						local startUse = tick()
-						repeat
-							local remain = math.max(0, 7 - (tick() - startUse))
-							labelCooldown.Text = string.format("Using Stalker (%.1fs)", remain)
-							task.wait(0.1)
-							if sessionId ~= currentSession then return end
-						until remain <= 0
-
-						local startCooldown = tick()
-						repeat
-							local remain = math.max(0, 20 - (tick() - startCooldown))
-							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
-							task.wait(0.1)
-							if sessionId ~= currentSession then return end
-						until remain <= 0
-
-						labelCooldown.Text = "Cooldown: Perk Ready!!!"
-						stalkerActive = false
-					end)
-				elseif not stalkerActive then
-					if justFoundBeast and tick() - foundTime <= 1.5 then
-						labelCooldown.Text = "Cooldown: Beast Detected !!!"
-					else
-						justFoundBeast = false
-						if tick() - tickTime >= 0.5 then
-							foundTextState = (foundTextState % 3) + 1
-							local dots = string.rep(".", foundTextState)
-							labelCooldown.Text = "Cooldown: Found new beast" .. dots
-							tickTime = tick()
-						end
+		elseif humanoid and skill == "stalker" then
+			local anyLightOff = false
+			for _, o in ipairs(beast.Character:GetDescendants()) do
+				if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) then
+					if not o.Enabled or o.Brightness == 0 then
+						anyLightOff = true
+						break
 					end
 				end
 			end
+
+			if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
+				stalkerActive = true
+				local currentSession = sessionId
+				task.spawn(function()
+					local startUse = tick()
+					repeat
+						local remain = math.max(0, 7 - (tick() - startUse))
+						labelCooldown.Text = string.format("Using Stalker (%.1fs)", remain)
+						task.wait(0.1)
+						if sessionId ~= currentSession then return end
+					until remain <= 0
+
+					local startCooldown = tick()
+					repeat
+						local remain = math.max(0, 20 - (tick() - startCooldown))
+						labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
+						task.wait(0.1)
+						if sessionId ~= currentSession then return end
+					until remain <= 0
+
+					labelCooldown.Text = "Cooldown: Perk Ready!!!"
+					stalkerActive = false
+				end)
+			end
+		end
+	end
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(1)
+		if foundBeast and (not beast or not isBeast(beast)) then
+			beast = nil
+			foundBeast = false
+			skill = "Không rõ"
+			usedRunner = false
+			stalkerActive = false
+			cooldownStart = nil
+			labelCooldown.Text = "Cooldown: Find new beast."
+			searchingLoop = true
 		end
 	end
 end)
