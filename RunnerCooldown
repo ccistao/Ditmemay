@@ -1,64 +1,41 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
 task.wait(0.3)
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local player = Players.LocalPlayer
+local plr = game:GetService("Players").LocalPlayer
+local TweenService, RunService, UIS = game:GetService("TweenService"), game:GetService("RunService"), game:GetService("UserInputService")
 
 -- Giao diện intro
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.ResetOnSpawn = false
-gui.Name = "IntroGui"
+local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn, gui.Name = false, "IntroGui"
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 1, 0)
-frame.BackgroundTransparency = 1
-frame.Parent = gui
+local frame = Instance.new("Frame", gui)
+frame.Size, frame.BackgroundTransparency = UDim2.new(1,0,1,0), 1
 
-local function createText(text, yOffset, textSize)
-	local label = Instance.new("TextLabel")
-	label.Text = text
-	label.Size = UDim2.new(0, 600, 0, 60)
-	label.Position = UDim2.new(0.5, 0, 0.5, yOffset)
-	label.AnchorPoint = Vector2.new(0.5, 0.5)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1,1,1)
-	label.TextStrokeTransparency = 0.2
-	label.TextStrokeColor3 = Color3.fromRGB(0,170,255)
-	label.Font = Enum.Font.GothamBold
-	label.TextTransparency = 1
-	label.TextWrapped = false
-	label.TextScaled = false
-	label.TextSize = textSize or 36
-	label.Parent = frame
-	return label
+local function createText(t, y, size)
+	local lbl = Instance.new("TextLabel", frame)
+	lbl.Text, lbl.Size = t, UDim2.new(0,600,0,60)
+	lbl.Position, lbl.AnchorPoint = UDim2.new(0.5,0,0.5,y), Vector2.new(0.5,0.5)
+	lbl.BackgroundTransparency, lbl.TextColor3 = 1, Color3.new(1,1,1)
+	lbl.TextStrokeTransparency, lbl.TextStrokeColor3 = 0.2, Color3.fromRGB(0,170,255)
+	lbl.Font, lbl.TextTransparency, lbl.TextScaled, lbl.TextSize = Enum.Font.GothamBold, 1, false, size or 36
+	return lbl
 end
 
-local mainText = createText("script made by ftf players", -35, 38)
-local subText = createText("ver 4.0.2 beta", 10, 26)
+local main, sub = createText("script made by ftf players", -35, 38), createText("ver 4.0.2 beta", 10, 26)
 
-local function fadeIn(label)
-	local tween = TweenService:Create(label, TweenInfo.new(1.5), {TextTransparency = 0})
-	tween:Play()
-end
-local function fadeOut(label)
-	local tween = TweenService:Create(label, TweenInfo.new(1.5), {TextTransparency = 1})
-	tween:Play()
+local function fade(lbl, alpha)
+	TweenService:Create(lbl, TweenInfo.new(1.5), {TextTransparency = alpha}):Play()
 end
 
-fadeIn(mainText)
-fadeIn(subText)
+fade(main, 0) fade(sub, 0)
 task.wait(5)
-fadeOut(mainText)
-fadeOut(subText)
+fade(main, 1) fade(sub, 1)
 task.wait(1.5)
 gui:Destroy()
 
---[[ CLEANUP ]]
-for _, name in ipairs({"BeastCooldownUI", "BeastBanner"}) do
-	local g = player.PlayerGui:FindFirstChild(name)
+-- Cleanup GUI cũ
+for _, n in ipairs({"BeastCooldownUI","BeastBanner"}) do
+	local g = plr.PlayerGui:FindFirstChild(n)
 	if g then g:Destroy() end
 end
 
