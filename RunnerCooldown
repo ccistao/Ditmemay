@@ -70,7 +70,7 @@ RunService.Heartbeat:Connect(function()
 	if not foundBeast then
 		if tick()-tickTime>=0.5 then foundTextState=(foundTextState%3)+1 labelCooldown.Text="Finding new beast"..string.rep(".",foundTextState) tickTime=tick() end
 	else
-		if searchingLoop then searchingLoop=false labelCooldown.Text="Cooldown: Found beast!!!" task.delay(2.5,function() if foundBeast then labelCooldown.Text="Cooldown: Perk Ready!!!" end end) end
+		if searchingLoop then searchingLoop=false labelCooldown.Text="Found beast!!!" task.delay(2.5,function() if foundBeast then labelCooldown.Text="Cooldown: Perk Ready!!!" end end) end
 		if beast and beast~=lastBeast then lastBeast=beast end
 		local hum,root=beast.Character and beast.Character:FindFirstChild("Humanoid"), beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
 		if hum and skill=="runner" then
