@@ -26,7 +26,7 @@ local function isOutsideCave(p) return p.X<caveMin.X or p.X>caveMax.X or p.Y<cav
 -- Cooldown UI (gần giữa màn hình, kích thước cũ)
 local function createCooldownUI()
 	local gui = Instance.new("ScreenGui", plr.PlayerGui) gui.Name,gui.ResetOnSpawn,gui.IgnoreGuiInset="BeastCooldownUI",false,true
-	local frame = Instance.new("Frame", gui) frame.Size,frame.Position=UDim2.new(0,190,0,43),UDim2.new(0.5,-90,0.8,0)
+	local frame = Instance.new("Frame", gui) frame.Size,frame.Position=UDim2.new(0,180,0,40),UDim2.new(0.5,-90,0.8,0)
 	frame.BackgroundTransparency,frame.BackgroundColor3,frame.BorderSizePixel,frame.Active=0.3,Color3.fromRGB(30,30,30),0,true
 	local label = Instance.new("TextLabel", frame) label.Size,label.BackgroundTransparency,label.TextColor3=UDim2.new(1,0,1,0),1,Color3.new(1,1,1)
 	label.Font,label.TextScaled,label.Text,label.Active=Enum.Font.SourceSansBold,true,"Cooldown:....",true
