@@ -144,7 +144,7 @@ RunService.Heartbeat:Connect(function()
 	if not foundBeast then
 		if tick() - tickTime >= 0.5 then
 			foundTextState = (foundTextState % 3) + 1
-			labelCooldown.Text = "Cooldown: Find new beast" .. string.rep(".", foundTextState)
+			labelCooldown.Text = "Finding new beast" .. string.rep(".", foundTextState)
 			tickTime = tick()
 		end
 	else
@@ -182,7 +182,7 @@ RunService.Heartbeat:Connect(function()
 					labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 				else
 					cooldownStart, usedRunner = nil, false
-					labelCooldown.Text = "Cooldown: Perk Ready!!!"
+					labelCooldown.Text = "Cooldown: Runner Ready!!!"
 				end
 			end
 
@@ -209,7 +209,7 @@ RunService.Heartbeat:Connect(function()
 						task.wait(0.1)
 						if sessionId ~= curSession then return end
 					until tick() - startCooldown >= 20
-					labelCooldown.Text = "Cooldown: Perk Ready!!!"
+					labelCooldown.Text = "Cooldown: Stalker Ready!!!"
 					stalkerActive = false
 				end)
 			end
