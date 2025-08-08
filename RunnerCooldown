@@ -184,6 +184,7 @@ end
 local beast = nil
 local foundBeast = false
 local skill = "Unknown"
+local sessionId = 0
 local cooldownStart = nil
 local usedRunner = false
 local stalkerActive = false
@@ -262,12 +263,14 @@ RunService.Heartbeat:Connect(function()
 					cooldownStart = nil
 
 					local startUse = tick()
+					local currentSession = sessionId
 					task.spawn(function()
 						repeat
 							local elapsed = tick() - startUse
 							local remain = math.max(0, 3 - elapsed)
 							labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
 							task.wait(0.1)
+							if sessionId ~= currentSession then return end
 						until remain <= 0
 
 						cooldownStart = tick()
@@ -299,6 +302,7 @@ RunService.Heartbeat:Connect(function()
 
 				if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
 					stalkerActive = true
+					local currentSession = sessionId
 					task.spawn(function()
 						local startUse = tick()
 						repeat
@@ -306,6 +310,7 @@ RunService.Heartbeat:Connect(function()
 							local remain = math.max(0, 7 - elapsed)
 							labelCooldown.Text = string.format("Using Stalker (%.1fs)", remain)
 							task.wait(0.1)
+							if sessionId ~= currentSession then return end
 						until remain <= 0
 
 						local startCooldown = tick()
@@ -314,6 +319,7 @@ RunService.Heartbeat:Connect(function()
 							local remain = math.max(0, 20 - elapsed)
 							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 							task.wait(0.1)
+							if sessionId ~= currentSession then return end
 						until remain <= 0
 
 						labelCooldown.Text = "Cooldown: Stalker Ready!!!"
