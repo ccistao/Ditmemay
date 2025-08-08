@@ -251,13 +251,12 @@ task.spawn(function()
 end)
 
 -- Theo dõi cooldown (phiên bản đếm ngược CHUẨN)
-local tickCount = 0
-local tickTime = 0
-local foundLoopActive = false
+local tickTime = tick()
 local foundTextState = 0
 local lastBeast = nil
 local justFoundBeast = false
 local foundTime = 0
+local sessionId = 0
 
 RunService.Heartbeat:Connect(function()
 	if foundBeast and beast and beast.Character then
@@ -275,18 +274,16 @@ RunService.Heartbeat:Connect(function()
 				if humanoid.WalkSpeed > 19 and not usedRunner then
 					usedRunner = true
 					cooldownStart = nil
-
 					local startUse = tick()
 					local currentSession = sessionId
+
 					task.spawn(function()
 						repeat
-							local elapsed = tick() - startUse
-							local remain = math.max(0, 3 - elapsed)
+							local remain = math.max(0, 3 - (tick() - startUse))
 							labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
 							task.wait(0.1)
 							if sessionId ~= currentSession then return end
 						until remain <= 0
-
 						cooldownStart = tick()
 					end)
 				end
@@ -305,12 +302,11 @@ RunService.Heartbeat:Connect(function()
 						labelCooldown.Text = "Cooldown: Beast Detected !!!"
 					else
 						justFoundBeast = false
-						tickTime = tickTime + 1
-						if tickTime >= 10 then
+						if tick() - tickTime >= 0.5 then
 							foundTextState = (foundTextState % 3) + 1
 							local dots = string.rep(".", foundTextState)
 							labelCooldown.Text = "Cooldown: Found new beast" .. dots
-							tickTime = 0
+							tickTime = tick()
 						end
 					end
 				end
@@ -333,8 +329,7 @@ RunService.Heartbeat:Connect(function()
 					task.spawn(function()
 						local startUse = tick()
 						repeat
-							local elapsed = tick() - startUse
-							local remain = math.max(0, 7 - elapsed)
+							local remain = math.max(0, 7 - (tick() - startUse))
 							labelCooldown.Text = string.format("Using Stalker (%.1fs)", remain)
 							task.wait(0.1)
 							if sessionId ~= currentSession then return end
@@ -342,8 +337,7 @@ RunService.Heartbeat:Connect(function()
 
 						local startCooldown = tick()
 						repeat
-							local elapsed = tick() - startCooldown
-							local remain = math.max(0, 20 - elapsed)
+							local remain = math.max(0, 20 - (tick() - startCooldown))
 							labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 							task.wait(0.1)
 							if sessionId ~= currentSession then return end
@@ -357,12 +351,11 @@ RunService.Heartbeat:Connect(function()
 						labelCooldown.Text = "Cooldown: Beast Detected !!!"
 					else
 						justFoundBeast = false
-						tickTime = tickTime + 1
-						if tickTime >= 10 then
+						if tick() - tickTime >= 0.5 then
 							foundTextState = (foundTextState % 3) + 1
 							local dots = string.rep(".", foundTextState)
 							labelCooldown.Text = "Cooldown: Found new beast" .. dots
-							tickTime = 0
+							tickTime = tick()
 						end
 					end
 				end
