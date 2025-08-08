@@ -2,12 +2,13 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main
 task.wait(0.3)
 
 local plr = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
 local TweenService, RunService, UIS = game:GetService("TweenService"), game:GetService("RunService"), game:GetService("UserInputService")
+local Replicated = game:GetService("ReplicatedStorage")
 
--- Giao diện intro
+-- Intro
 local gui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
 gui.ResetOnSpawn, gui.Name = false, "IntroGui"
-
 local frame = Instance.new("Frame", gui)
 frame.Size, frame.BackgroundTransparency = UDim2.new(1,0,1,0), 1
 
@@ -22,16 +23,8 @@ local function createText(t, y, size)
 end
 
 local main, sub = createText("script made by ftf players", -35, 38), createText("ver 4.0.2 beta", 10, 26)
-
-local function fade(lbl, alpha)
-	TweenService:Create(lbl, TweenInfo.new(1.5), {TextTransparency = alpha}):Play()
-end
-
-fade(main, 0) fade(sub, 0)
-task.wait(5)
-fade(main, 1) fade(sub, 1)
-task.wait(1.5)
-gui:Destroy()
+local function fade(lbl, alpha) TweenService:Create(lbl, TweenInfo.new(1.5), {TextTransparency = alpha}):Play() end
+fade(main, 0) fade(sub, 0) task.wait(5) fade(main, 1) fade(sub, 1) task.wait(1.5) gui:Destroy()
 
 -- Cleanup GUI cũ
 for _, n in ipairs({"BeastCooldownUI","BeastBanner"}) do
@@ -42,129 +35,72 @@ end
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 task.wait(0.5)
 
---[[ VÙNG CAVE ]]
-local caveMin = Vector3.new(-275, -10, -275)
-local caveMax = Vector3.new(-179, 45, -179)
+-- Cave
+local caveMin, caveMax = Vector3.new(-275, -10, -275), Vector3.new(-179, 45, -179)
 local function isOutsideCave(pos)
-	return pos.X < caveMin.X or pos.X > caveMax.X or
-	       pos.Y < caveMin.Y or pos.Y > caveMax.Y or
-	       pos.Z < caveMin.Z or pos.Z > caveMax.Z
+	return pos.X < caveMin.X or pos.X > caveMax.X or pos.Y < caveMin.Y or pos.Y > caveMax.Y or pos.Z < caveMin.Z or pos.Z > caveMax.Z
 end
 
---[[ UI Cooldown ]]
+-- UI Cooldown
 local function createCooldownUI()
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "BeastCooldownUI"
-	gui.ResetOnSpawn = false
-	gui.IgnoreGuiInset = true -- Cho phép kéo sát mọi góc
-	gui.Parent = player.PlayerGui
+	local gui = Instance.new("ScreenGui", plr.PlayerGui)
+	gui.Name, gui.ResetOnSpawn, gui.IgnoreGuiInset = "BeastCooldownUI", false, true
 
-	local frame = Instance.new("Frame")
-	frame.Name = "CooldownLabel"
-	frame.Size = UDim2.new(0,180,0,40)
-	frame.Position = UDim2.new(1,-190,0,10)
-	frame.BackgroundTransparency = 0.3
-	frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-	frame.BorderSizePixel = 0
-	frame.Parent = gui
-        frame.Active = true
-      
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1,0,1,0)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1,1,1)
-	label.Font = Enum.Font.SourceSansBold
-	label.TextScaled = true
-	label.Text = "Cooldown:...."
-	label.Parent = frame
-        label.Active = true
+	local frame = Instance.new("Frame", gui)
+	frame.Name, frame.Size, frame.Position = "CooldownLabel", UDim2.new(0,180,0,40), UDim2.new(1,-190,0,10)
+	frame.BackgroundTransparency, frame.BackgroundColor3, frame.BorderSizePixel, frame.Active = 0.3, Color3.fromRGB(30,30,30), 0, true
 
-        -- Gán cho phần kéo
-local dragging = false
-local dragStart, startPos
+	local label = Instance.new("TextLabel", frame)
+	label.Size, label.BackgroundTransparency, label.TextColor3 = UDim2.new(1,0,1,0), 1, Color3.new(1,1,1)
+	label.Font, label.TextScaled, label.Text, label.Active = Enum.Font.SourceSansBold, true, "Cooldown:....", true
 
-local function startDrag(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
+	-- Kéo UI
+	local dragging, dragStart, startPos = false
+	local function startDrag(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging, dragStart, startPos = true, input.Position, frame.Position
+		end
 	end
-end
-
-local function stopDrag(input)
-	if input.UserInputState == Enum.UserInputState.End then
-		dragging = false
+	local function stopDrag(input) if input.UserInputState == Enum.UserInputState.End then dragging = false end end
+	local function updateDrag(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
 	end
+	frame.InputBegan:Connect(startDrag) frame.InputEnded:Connect(stopDrag)
+	label.InputBegan:Connect(startDrag) label.InputEnded:Connect(stopDrag)
+	UIS.InputChanged:Connect(updateDrag)
+
+	return label
 end
 
-local function updateDrag(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end
-
-frame.InputBegan:Connect(startDrag)
-frame.InputEnded:Connect(stopDrag)
-label.InputBegan:Connect(startDrag)
-label.InputEnded:Connect(stopDrag)
-UserInputService.InputChanged:Connect(updateDrag)
-
-return label
-end
-
---[[ BANNER BEAST ]]
+-- Banner Beast
 local function showBeastFoundBanner()
-	local gui = Instance.new("ScreenGui", player.PlayerGui)
+	local gui = Instance.new("ScreenGui", plr.PlayerGui)
 	gui.Name = "BeastBanner"
 	local label = Instance.new("TextLabel", gui)
-	label.Size = UDim2.new(0, 250, 0, 40)
-	label.Position = UDim2.new(1, 10, 0, 10)
-	label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Font = Enum.Font.SourceSansBold
-	label.TextScaled = true
-	label.Text = "Beast found!!!"
-	label.BorderSizePixel = 2
+	label.Size, label.Position = UDim2.new(0, 250, 0, 40), UDim2.new(1, 10, 0, 10)
+	label.BackgroundColor3, label.TextColor3 = Color3.new(0,0,0), Color3.new(1,1,1)
+	label.Font, label.TextScaled, label.Text, label.BorderSizePixel = Enum.Font.SourceSansBold, true, "Beast found!!!", 2
 
-	local colors = {
-		Color3.fromRGB(255,0,0),Color3.fromRGB(255,128,0),
-		Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,0),
-		Color3.fromRGB(0,255,255),Color3.fromRGB(0,0,255),
-		Color3.fromRGB(128,0,255)
-	}
+	local colors = {Color3.fromRGB(255,0,0),Color3.fromRGB(255,128,0),Color3.fromRGB(255,255,0),Color3.fromRGB(0,255,0),
+		Color3.fromRGB(0,255,255),Color3.fromRGB(0,0,255),Color3.fromRGB(128,0,255)}
 	local idx = 1
 	local conn = RunService.RenderStepped:Connect(function()
-		if label then
-			label.BorderColor3 = colors[idx]
-			idx = idx % #colors + 1
-		end
+		label.BorderColor3 = colors[idx]
+		idx = idx % #colors + 1
 	end)
 
-	local tweenIn = TweenService:Create(label, TweenInfo.new(0.5), {Position = UDim2.new(1,-260,0,10)})
-	local tweenOut = TweenService:Create(label, TweenInfo.new(0.5), {Position = UDim2.new(1,10,0,10)})
-	tweenIn:Play()
-	tweenIn.Completed:Wait()
-	task.wait(2.5)
-	tweenOut:Play()
-	tweenOut.Completed:Wait()
-	conn:Disconnect()
-	gui:Destroy()
+	TweenService:Create(label, TweenInfo.new(0.5), {Position = UDim2.new(1,-260,0,10)}):Play()
+	task.wait(3)
+	TweenService:Create(label, TweenInfo.new(0.5), {Position = UDim2.new(1,10,0,10)}):Play()
+	conn:Disconnect() task.wait(0.5) gui:Destroy()
 end
 
---[[ MAIN ]]
-local beast = nil
-local foundBeast = false
-local skill = "Unknown"
-local sessionId = 0
-local cooldownStart = nil
-local usedRunner = false
-local stalkerActive = false
+-- Main biến
+local beast, foundBeast, skill, sessionId, cooldownStart, usedRunner, stalkerActive =
+	nil, false, "Unknown", 0, nil, false, false
 local labelCooldown = createCooldownUI()
 
 local function isBeast(p)
@@ -172,24 +108,12 @@ local function isBeast(p)
 	return stats and stats:FindFirstChild("IsBeast") and stats.IsBeast.Value
 end
 
--- Phát hiện và theo dõi skill Beast
-local Replicated = game:GetService("ReplicatedStorage")
-
 local function detectSkill()
 	task.spawn(function()
 		local power
-		repeat
-			power = Replicated:FindFirstChild("CurrentPower")
-			task.wait(0.5)
-		until power and power:IsA("StringValue")
-
-		-- Cập nhật ngay khi tìm thấy
+		repeat power = Replicated:FindFirstChild("CurrentPower") task.wait(0.5) until power and power:IsA("StringValue")
 		skill = power.Value:lower()
-
-		-- Luôn lắng nghe thay đổi
-		power:GetPropertyChangedSignal("Value"):Connect(function()
-			skill = power.Value:lower()
-		end)
+		power:GetPropertyChangedSignal("Value"):Connect(function() skill = power.Value:lower() end)
 	end)
 end
 
@@ -197,50 +121,30 @@ end
 task.spawn(function()
 	while true do
 		task.wait(3)
-		-- Nếu beast cũ không còn là Beast nữa => reset biến
 		if beast and not isBeast(beast) then
-			foundBeast = false
-			beast = nil
-			skill = "Đéo biết"
-			usedRunner = false
-			stalkerActive = false
-			cooldownStart = nil
+			foundBeast, beast, skill, usedRunner, stalkerActive, cooldownStart = false, nil, "Đéo biết", false, false, nil
 			labelCooldown.Text = "PERK READY!!!"
 		end
-
-		-- Tìm Beast mới
 		for _, p in ipairs(Players:GetPlayers()) do
-			if isBeast(p) then
-				if not foundBeast or p ~= beast then
-					beast = p
-					foundBeast = true
-					skill = "Không rõ"
-					usedRunner = false
-					stalkerActive = false
-					cooldownStart = nil
-					labelCooldown.Text = "Cooldown: Perk Ready!!!"
-					detectSkill()
-                                        showBeastFoundBanner()
-				end
+			if isBeast(p) and (not foundBeast or p ~= beast) then
+				beast, foundBeast, skill, usedRunner, stalkerActive, cooldownStart = p, true, "Không rõ", false, false, nil
+				labelCooldown.Text = "Cooldown: Perk Ready!!!"
+				detectSkill()
+				showBeastFoundBanner()
 			end
 		end
 	end
 end)
 
--- Theo dõi cooldown (phiên bản đếm ngược CHUẨN)
-local tickTime = tick()
-local foundTextState = 0
-local lastBeast = nil
-local justFoundBeast = false
-local foundTime = 0
-local searchingLoop = true
+-- Theo dõi cooldown
+local tickTime, foundTextState, lastBeast, justFoundBeast, foundTime, searchingLoop =
+	tick(), 0, nil, false, 0, true
 
 RunService.Heartbeat:Connect(function()
 	if not foundBeast then
 		if tick() - tickTime >= 0.5 then
 			foundTextState = (foundTextState % 3) + 1
-			local dots = string.rep(".", foundTextState)
-			labelCooldown.Text = "Cooldown: Find new beast" .. dots
+			labelCooldown.Text = "Cooldown: Find new beast" .. string.rep(".", foundTextState)
 			tickTime = tick()
 		end
 	else
@@ -253,41 +157,31 @@ RunService.Heartbeat:Connect(function()
 				end
 			end)
 		end
-
 		if beast and beast ~= lastBeast then
-			justFoundBeast = true
-			foundTime = tick()
-			lastBeast = beast
+			justFoundBeast, foundTime, lastBeast = true, tick(), beast
 		end
-
 		local humanoid = beast.Character and beast.Character:FindFirstChild("Humanoid")
 		local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
 
 		if humanoid and skill == "runner" then
 			if humanoid.WalkSpeed > 19 and not usedRunner then
-				usedRunner = true
-				cooldownStart = nil
-				local startUse = tick()
-				local currentSession = sessionId
-
+				usedRunner, cooldownStart = true, nil
+				local startUse, curSession = tick(), sessionId
 				task.spawn(function()
 					repeat
-						local remain = math.max(0, 3 - (tick() - startUse))
-						labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
+						labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
 						task.wait(0.1)
-						if sessionId ~= currentSession then return end
-					until remain <= 0
+						if sessionId ~= curSession then return end
+					until tick() - startUse >= 3
 					cooldownStart = tick()
 				end)
 			end
-
 			if cooldownStart then
 				local remain = math.max(0, 22 - (tick() - cooldownStart))
 				if remain > 0 then
 					labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
 				else
-					cooldownStart = nil
-					usedRunner = false
+					cooldownStart, usedRunner = nil, false
 					labelCooldown.Text = "Cooldown: Perk Ready!!!"
 				end
 			end
@@ -295,34 +189,26 @@ RunService.Heartbeat:Connect(function()
 		elseif humanoid and skill == "stalker" then
 			local anyLightOff = false
 			for _, o in ipairs(beast.Character:GetDescendants()) do
-				if (o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight")) then
-					if not o.Enabled or o.Brightness == 0 then
-						anyLightOff = true
-						break
-					end
+				if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
+					if not o.Enabled or o.Brightness == 0 then anyLightOff = true break end
 				end
 			end
-
 			if root and anyLightOff and not stalkerActive and isOutsideCave(root.Position) then
 				stalkerActive = true
-				local currentSession = sessionId
+				local curSession = sessionId
 				task.spawn(function()
 					local startUse = tick()
 					repeat
-						local remain = math.max(0, 7 - (tick() - startUse))
-						labelCooldown.Text = string.format("Using Stalker (%.1fs)", remain)
+						labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
 						task.wait(0.1)
-						if sessionId ~= currentSession then return end
-					until remain <= 0
-
+						if sessionId ~= curSession then return end
+					until tick() - startUse >= 7
 					local startCooldown = tick()
 					repeat
-						local remain = math.max(0, 20 - (tick() - startCooldown))
-						labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
+						labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCooldown)))
 						task.wait(0.1)
-						if sessionId ~= currentSession then return end
-					until remain <= 0
-
+						if sessionId ~= curSession then return end
+					until tick() - startCooldown >= 20
 					labelCooldown.Text = "Cooldown: Perk Ready!!!"
 					stalkerActive = false
 				end)
@@ -331,16 +217,13 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
+-- Reset khi mất Beast
 task.spawn(function()
 	while true do
 		task.wait(1)
 		if foundBeast and (not beast or not isBeast(beast)) then
-			beast = nil
-			foundBeast = false
-			skill = "Không rõ"
-			usedRunner = false
-			stalkerActive = false
-			cooldownStart = nil
+			beast, foundBeast, skill, usedRunner, stalkerActive, cooldownStart =
+				nil, false, "Không rõ", false, false, nil
 			labelCooldown.Text = "Cooldown: Find new beast."
 			searchingLoop = true
 		end
