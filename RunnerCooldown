@@ -251,8 +251,22 @@ task.spawn(function()
 end)
 
 -- Theo dõi cooldown (phiên bản đếm ngược CHUẨN)
+local tickCount = 0
+local tickTime = 0
+local foundLoopActive = false
+local foundTextState = 0
+local lastBeast = nil
+local justFoundBeast = false
+local foundTime = 0
+
 RunService.Heartbeat:Connect(function()
 	if foundBeast and beast and beast.Character then
+		if beast ~= lastBeast then
+			justFoundBeast = true
+			foundTime = tick()
+			lastBeast = beast
+		end
+
 		local root = beast.Character:FindFirstChild("HumanoidRootPart")
 		local humanoid = beast.Character:FindFirstChild("Humanoid")
 
@@ -284,7 +298,20 @@ RunService.Heartbeat:Connect(function()
 					else
 						cooldownStart = nil
 						usedRunner = false
-						labelCooldown.Text = "Cooldown: Runner Ready!!!"
+						labelCooldown.Text = "Cooldown: Perk Ready!!!"
+					end
+				elseif not usedRunner then
+					if justFoundBeast and tick() - foundTime <= 1.5 then
+						labelCooldown.Text = "Cooldown: Beast Detected !!!"
+					else
+						justFoundBeast = false
+						tickTime = tickTime + 1
+						if tickTime >= 10 then
+							foundTextState = (foundTextState % 3) + 1
+							local dots = string.rep(".", foundTextState)
+							labelCooldown.Text = "Cooldown: Found new beast" .. dots
+							tickTime = 0
+						end
 					end
 				end
 
@@ -322,9 +349,22 @@ RunService.Heartbeat:Connect(function()
 							if sessionId ~= currentSession then return end
 						until remain <= 0
 
-						labelCooldown.Text = "Cooldown: Stalker Ready!!!"
+						labelCooldown.Text = "Cooldown: Perk Ready!!!"
 						stalkerActive = false
 					end)
+				elseif not stalkerActive then
+					if justFoundBeast and tick() - foundTime <= 1.5 then
+						labelCooldown.Text = "Cooldown: Beast Detected !!!"
+					else
+						justFoundBeast = false
+						tickTime = tickTime + 1
+						if tickTime >= 10 then
+							foundTextState = (foundTextState % 3) + 1
+							local dots = string.rep(".", foundTextState)
+							labelCooldown.Text = "Cooldown: Found new beast" .. dots
+							tickTime = 0
+						end
+					end
 				end
 			end
 		end
