@@ -261,17 +261,17 @@ RunService.Heartbeat:Connect(function()
 					usedRunner = true
 					cooldownStart = nil
 
-					local start = tick()
+					local startUse = tick()
 					task.spawn(function()
 						repeat
-							local elapsed = tick() - start
+							local elapsed = tick() - startUse
 							local remain = math.max(0, 3 - elapsed)
 							labelCooldown.Text = string.format("Using Runner (%.1fs)", remain)
 							task.wait(0.1)
-						until remain <= 0 or humanoid.WalkSpeed <= 19
+						until remain <= 0
+
+						cooldownStart = tick()
 					end)
-				elseif usedRunner and humanoid.WalkSpeed <= 19 and not cooldownStart then
-					cooldownStart = tick()
 				end
 
 				if cooldownStart then
