@@ -1,5 +1,5 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
-task.wait(0.3)
+task.wait(0.05)
 
 local plr = game:GetService("Players").LocalPlayer
 local Players = game:GetService("Players")
@@ -33,7 +33,7 @@ for _, n in ipairs({"BeastCooldownUI","BeastBanner"}) do
 end
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
-task.wait(0.5)
+task.wait(0.05)
 
 -- Cave
 local caveMin, caveMax = Vector3.new(-275, -10, -275), Vector3.new(-179, 45, -179)
