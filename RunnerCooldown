@@ -47,7 +47,7 @@ local sub = createText("ver 4.0.3",10,26)
 
 local function fade(lbl, a)
     if lbl and lbl.Parent then
-        TweenService:Create(lbl, TweenInfo.new(1.5), {TextTransparency = a}):Play()
+        TweenService:Create(lbl, TweenInfo.new(1), {TextTransparency = a}):Play()
     end
 end
 
