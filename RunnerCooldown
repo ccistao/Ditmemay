@@ -3,28 +3,30 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 task.wait(0.05)
 
--- Xóa UI cũ nếu có
+-- Xóa toàn bộ UI liên quan
 local player = game:GetService("Players").LocalPlayer
 if player:FindFirstChild("PlayerGui") then
     for _, gui in ipairs(player.PlayerGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and (
-            gui.Name:match("Beast") or 
-            gui.Name:match("Cooldown")
-        ) then
+        if gui:IsA("ScreenGui") and (gui.Name:match("Beast") or gui.Name:match("Cooldown")) then
             gui:Destroy()
         end
     end
 end
 
--- Ngắt và xóa script cũ
+for _, obj in ipairs(game:GetDescendants()) do
+    if obj:IsA("LocalScript") or obj:IsA("ModuleScript") then
+        if obj.Name == script.Name and obj ~= script then
+            obj:Destroy()
+        end
+    end
+end
+
 if getgc then
     for _, obj in ipairs(getgc()) do
         if typeof(obj) == "function" then
             local env = getfenv(obj)
             if env and env.script and env.script ~= script and env.script.Name == script.Name then
-                pcall(function()
-                    env.script:Destroy()
-                end)
+                pcall(function() env.script:Destroy() end)
             end
         end
     end
