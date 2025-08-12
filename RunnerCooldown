@@ -13,11 +13,16 @@ if plr:FindFirstChild("PlayerGui") then
     end
 end
 
-for _, obj in ipairs(getgc and getgc() or {}) do
-    if typeof(obj) == "function" and getfenv(obj).script and getfenv(obj).script.Name == script.Name then
-        pcall(function()
-            getfenv(obj).script:Destroy()
-        end)
+if getgc then
+    for _, obj in ipairs(getgc()) do
+        if typeof(obj) == "function" then
+            local env = getfenv(obj)
+            if env and env.script and env.script.Name == script.Name then
+                pcall(function()
+                    env.script:Destroy()
+                end)
+            end
+        end
     end
 end
 
