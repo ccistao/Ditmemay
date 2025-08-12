@@ -1,5 +1,25 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditnemay/main/Webhockecbmaya"))()
 task.wait(0.05)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
+task.wait(0.05)
+
+-- 🔹 Xóa toàn bộ GUI cũ nếu tồn tại
+local plr = game:GetService("Players").LocalPlayer
+if plr:FindFirstChild("PlayerGui") then
+    for _, guiName in ipairs({"BeastCooldownUI","BeastBanner","IntroGui"}) do
+        local g = plr.PlayerGui:FindFirstChild(guiName)
+        if g then g:Destroy() end
+    end
+end
+
+for _, obj in ipairs(getgc and getgc() or {}) do
+    if typeof(obj) == "function" and getfenv(obj).script and getfenv(obj).script.Name == script.Name then
+        pcall(function()
+            getfenv(obj).script:Destroy()
+        end)
+    end
+end
 
 local Players = game:GetService("Players")
 repeat task.wait() until Players.LocalPlayer
@@ -56,15 +76,6 @@ task.wait(4)
 fade(main,1); fade(sub,1)
 task.wait(1.5)
 pcall(function() guiIntro:Destroy() end)
-
--- Cleanup old GUIs
-for _, n in ipairs({"BeastCooldownUI","BeastBanner"}) do
-    local g = plr.PlayerGui:FindFirstChild(n)
-    if g then g:Destroy() end
-end
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
-task.wait(0.05)
 
 -- Cave check
 local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
