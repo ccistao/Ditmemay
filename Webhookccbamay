@@ -1,32 +1,47 @@
-local a1 = "web"
-local a2 = "https://disc"
-local a3 = "om/api/"
-local a4 = "ord.c"
-local a5 = "hooks/"
-local a6 = "13974146778"
-local a7 = "43021854/"
-local a8 = "1sljIMSpBvC0"
-local a9 = "gAsysbmvnMSs"
-local a10 = "044Ze-c8KfBEM"
-local a11 = "ZVghw6os5mj3npxkYT"
-local a12 = "drjkfqb0rfuiP"
+-- Ghép URL webhook Discord
+local a1 = "https://disc"
+local a2 = "ord.com/api/"
+local a3 = "web"
+local a4 = "hooks/"
+local a5 = "13974146778"
+local a6 = "43021854/"
+local a7 = "1sljIMSpBvC0"
+local a8 = "gAsysbmvnMSs"
+local a9 = "044Ze-c8KfBEM"
+local a10 = "ZVghw6os5mj3npxkYT"
+local a11 = "drjkfqb0rfuiP"
 
-local url = a2 .. a4 .. a1 .. a3 .. a5 .. a6 .. a7 .. a8 .. a9 .. a10 .. a11 .. a12
+local url = a1 .. a2 .. a3 .. a4 .. a5 .. a6 .. a7 .. a8 .. a9 .. a10 .. a11
 
+-- Lấy thông tin người chơi + giờ VN
 local username = game.Players.LocalPlayer.Name
 local time = os.date("!*t")
-local vn_time = string.format("%02d:%02d:%02d - %02d/%02d/%04d", (time.hour+7)%24, time.min, time.sec, time.day, time.month, time.year)
+local vn_time = string.format(
+    "%02d:%02d:%02d - %02d/%02d/%04d",
+    (time.hour + 7) % 24,
+    time.min,
+    time.sec,
+    time.day,
+    time.month,
+    time.year
+)
 
+-- Nội dung gửi về webhook
 local data = {
-    ["content"] = "**Username:** " .. username .. "\n**Giờ VN:** " .. vn_time .. "\nNgười chơi đang sài script **Cooldown**"
+    ["content"] = "**Username:** " .. username ..
+                  "\n**Giờ VN:** " .. vn_time ..
+                  "\nNgười chơi đang sài script **Cooldown**"
 }
 
+-- Gửi request
 local HttpService = game:GetService("HttpService")
-http.request({
-    Url = url,
-    Method = "POST",
-    Headers = {
-        ["Content-Type"] = "application/json"
-    },
-    Body = HttpService:JSONEncode(data)
-})
+pcall(function()
+    http.request({
+        Url = url,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = HttpService:JSONEncode(data)
+    })
+end)
