@@ -1,8 +1,11 @@
-
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 task.wait(0.05)
+
+local Players = game:GetService("Players")
+repeat task.wait() until Players.LocalPlayer
+local plr = Players.LocalPlayer
 
 -- Services
 local TweenService = game:GetService("TweenService")
