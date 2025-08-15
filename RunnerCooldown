@@ -269,8 +269,21 @@ end
 task.spawn(function()
     while true do
         task.wait(0.05)
-        -- ensure label exists
         ensureLabel()
+
+        if foundBeast then
+            if not beast or not Players:FindFirstChild(beast.Name) or not isBeast(beast) then
+                beast = nil
+                foundBeast = false
+                skill = "Unknown"
+                cooldownStart = nil
+                usedRunner = false
+                stalkerActive = false
+                if labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = "Finding new beast..."
+                end
+            end
+        end
 
         if not foundBeast then
             for _, p in ipairs(Players:GetPlayers()) do
@@ -281,7 +294,6 @@ task.spawn(function()
                     stalkerActive = false
                     cooldownStart = nil
                     detectSkill()
-                    -- banner + label
                     showBeastFoundBanner()
                     if labelCooldown and labelCooldown.Parent then
                         labelCooldown.Text = "Found beast!!!"
@@ -292,19 +304,6 @@ task.spawn(function()
                         end
                     end)
                     break
-                end
-            end
-        else
-            -- if beast lost or not beast anymore -> reset to finding
-            if not beast or (beast and not isBeast(beast)) then
-                beast = nil
-                foundBeast = false
-                skill = "Unknown"
-                cooldownStart = nil
-                usedRunner = false
-                stalkerActive = false
-                if labelCooldown and labelCooldown.Parent then
-                    labelCooldown.Text = "Finding new beast..."
                 end
             end
         end
