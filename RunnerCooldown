@@ -127,6 +127,7 @@ end
 
 -- Banner function 
 local function showBeastFoundBanner()
+    if not beast then return end
     local gui = Instance.new("ScreenGui")
     gui.Parent = plr.PlayerGui
     gui.Name = "BeastBanner"
