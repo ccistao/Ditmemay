@@ -139,7 +139,7 @@ local function showBeastFoundBanner()
     label.TextColor3 = Color3.new(1,1,1)
     label.Font = Enum.Font.SourceSansBold
     label.TextScaled = true
-    label.Text = "Beast found!!!"
+    label.Text = beast.Name .. " is beast!!!"
     label.BorderSizePixel = 2
 
     local colors = {
