@@ -1,6 +1,4 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Webhookccbamay"))()
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 task.wait(0.05)
 
 local Players = game:GetService("Players")
@@ -58,6 +56,8 @@ task.wait(4)
 fade(main,1); fade(sub,1)
 task.wait(1.5)
 pcall(function() guiIntro:Destroy() end)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 
 -- Cave check
 local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
