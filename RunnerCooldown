@@ -125,6 +125,15 @@ local function createCooldownUI()
     return label
 end
 
+-- Main vars
+local beast = nil
+local foundBeast = false
+local skill = "Unknown"
+local cooldownStart = nil
+local usedRunner = false
+local stalkerActive = false
+local labelCooldown = nil
+
 -- Banner function 
 local function showBeastFoundBanner()
     if not beast then return end
@@ -164,15 +173,6 @@ local function showBeastFoundBanner()
     task.wait(0.5)
     pcall(function() gui:Destroy() end)
 end
-
--- Main vars
-local beast = nil
-local foundBeast = false
-local skill = "Unknown"
-local cooldownStart = nil
-local usedRunner = false
-local stalkerActive = false
-local labelCooldown = nil
 
 -- create label
 local function ensureLabel()
