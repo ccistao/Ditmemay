@@ -288,7 +288,7 @@ RunService.RenderStepped:Connect(function()
 		if part and bb then
 			local origin = hrp and hrp.Position or camPos
 			local dist = (part.Position - origin).Magnitude
-			if dist <= currentShowDist and isVisible(part) then
+			if dist <= currentShowDist then
 				bb.Enabled = true
 			else
 				bb.Enabled = false
