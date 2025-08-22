@@ -1,4 +1,4 @@
-local Players = game:GetService("Players")
+5local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
@@ -35,7 +35,12 @@ local function createBillboard(pc)
 	local part = findAttachPart(pc)
 	if not part then return end
 
+	if part:FindFirstChild("PC_Billboard") then
+		return pcLabels[pc]
+	end
+
 	local bb = Instance.new("BillboardGui")
+	bb.Name = "PC_Billboard"
 	bb.Size = UDim2.new(0, 100, 0, 40)
 	bb.StudsOffset = Vector3.new(0, 2, 0)
 	bb.AlwaysOnTop = true
