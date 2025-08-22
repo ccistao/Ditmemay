@@ -44,6 +44,7 @@ local function createBillboard(pc)
 	bb.Size = UDim2.new(0, 100, 0, 40)
 	bb.StudsOffset = Vector3.new(0, 2, 0)
 	bb.AlwaysOnTop = true
+	bb.MaxDistance = math.huge
 	bb.Adornee = part
 	bb.Parent = part
 
