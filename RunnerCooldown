@@ -13,49 +13,6 @@ local Replicated = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until plr:FindFirstChild("PlayerGui")
 
--- Intro
-local guiIntro = Instance.new("ScreenGui")
-guiIntro.Parent = plr.PlayerGui
-guiIntro.ResetOnSpawn = false
-guiIntro.Name = "IntroGui"
-
-local frameIntro = Instance.new("Frame")
-frameIntro.Parent = guiIntro
-frameIntro.Size = UDim2.new(1,0,1,0)
-frameIntro.BackgroundTransparency = 1
-
-local function createText(t,y,s)
-    local l = Instance.new("TextLabel")
-    l.Parent = frameIntro
-    l.Text = t
-    l.Size = UDim2.new(0,600,0,60)
-    l.Position = UDim2.new(0.5,0,0.5,y)
-    l.AnchorPoint = Vector2.new(0.5,0.5)
-    l.BackgroundTransparency = 1
-    l.TextColor3 = Color3.new(1,1,1)
-    l.TextStrokeTransparency = 0.2
-    l.TextStrokeColor3 = Color3.fromRGB(0,170,255)
-    l.Font = Enum.Font.GothamBold
-    l.TextTransparency = 1
-    l.TextScaled = false
-    l.TextSize = s or 36
-    return l
-end
-
-local main = createText("script made by ftf players",-35,38)
-local sub = createText("ver 4.0.3",10,26)
-
-local function fade(lbl, a)
-    if lbl and lbl.Parent then
-        TweenService:Create(lbl, TweenInfo.new(1), {TextTransparency = a}):Play()
-    end
-end
-
-fade(main,0); fade(sub,0)
-task.wait(4)
-fade(main,1); fade(sub,1)
-task.wait(1.5)
-pcall(function() guiIntro:Destroy() end)
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
 
