@@ -10,9 +10,6 @@ local Replicated = game:GetService("ReplicatedStorage")
 
 repeat task.wait() until plr:FindFirstChild("PlayerGui")
 
-
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ccistao/Ditmemay/main/Thongbao"))()
-
 -- Cave check
 local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
 local function isOutsideCave(p)
