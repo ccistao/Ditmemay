@@ -134,7 +134,8 @@ task.spawn(function()
             dots = (dots % 3) + 1
             labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
         end
-
+    end
+end
 -- Detect skill khi game bắt đầu
 local function detectSkillWhenGameActive()
     task.spawn(function()
