@@ -134,11 +134,17 @@ task.spawn(function()
             dots = (dots % 3) + 1
             labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
         end
-    end
-end)
 
-local function detectSkillDelayed()
-    task.delay(17, function() -- đợi 17 giây sau khi tìm thấy Beast
+-- Detect skill khi game bắt đầu
+local function detectSkillWhenGameActive()
+    task.spawn(function()
+        local gameActive = Replicated:WaitForChild("IsGameActive")
+        -- chờ tới khi game thực sự bắt đầu
+        if gameActive:IsA("BoolValue") then
+            repeat task.wait(0.5) until gameActive.Value == true
+        end
+
+        -- đảm bảo Beast vẫn tồn tại
         if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
 
         local power
@@ -159,7 +165,6 @@ local function detectSkillDelayed()
         end)
     end)
 end
-
 
 -- Scan Beast
 local function isBeast(player)
@@ -186,7 +191,7 @@ task.spawn(function()
                 if isBeast(p) then
                     beast, foundBeast = p, true
                     showBanner(beast.Name .. " is Beast!!!", "BeastBanner")
-                    detectSkillDelayed()
+                    detectSkillWhenGameActive()
                     if labelCooldown then labelCooldown.Text = "Found beast!!!" end
                     task.delay(2.5, function()
                         if foundBeast and labelCooldown then
