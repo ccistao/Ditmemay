@@ -1,0 +1,266 @@
+local Players = game:GetService("Players")
+local Replicated = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Xóa GUI cũ
+for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner", "BeastCooldownUI", "BeastBanner"}) do
+    local old = PlayerGui:FindFirstChild(name)
+    if old then old:Destroy() end
+end
+
+-- Cave check
+local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
+local function isOutsideCave(p)
+    if not p then return false end
+    return p.X < caveMin.X or p.X > caveMax.X or p.Y < caveMin.Y or p.Y > caveMax.Y or p.Z < caveMin.Z or p.Z > caveMax.Z
+end
+
+-- ====== Banner ======
+local function createRainbowBorder(frame)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 127, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(75, 0, 130)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(148, 0, 211)),
+    })
+    gradient.Parent = frame
+
+    RunService.RenderStepped:Connect(function()
+        if gradient then gradient.Rotation = (gradient.Rotation + 1) % 360 end
+    end)
+end
+
+local function showBanner(text, name)
+    if PlayerGui:FindFirstChild(name) then return end
+    local gui = Instance.new("ScreenGui", PlayerGui)
+    gui.Name = name
+
+    local label = Instance.new("TextLabel", gui)
+    label.Size, label.Position = UDim2.new(0, 250, 0, 40), UDim2.new(1, 10, 0, 10)
+    label.BackgroundColor3, label.TextColor3 = Color3.fromRGB(30, 30, 30), Color3.new(1, 1, 1)
+    label.Font, label.TextScaled, label.Text = Enum.Font.SourceSansBold, true, text
+
+    createRainbowBorder(label)
+
+    local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, -270, 0, 10)})
+    local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, 10, 0, 10)})
+
+    tweenIn:Play()
+    tweenIn.Completed:Wait()
+    task.delay(3.4, function()
+        tweenOut:Play()
+        tweenOut.Completed:Wait()
+        gui:Destroy()
+    end)
+end
+
+-- ====== Cooldown UI ======
+local function createCooldownUI()
+    local gui = Instance.new("ScreenGui")
+    gui.Parent = PlayerGui
+    gui.Name = "BeastCooldownUI"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0,180,0,40)
+    frame.Position = UDim2.new(0.5,-90,0.8,0)
+    frame.BackgroundTransparency = 0.3
+    frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextScaled = true
+    label.Text = "Finding new beast..."
+
+    -- Drag
+    local dragging, dragStart, startPos
+    local function startDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging, dragStart, startPos = true, input.Position, frame.Position
+        end
+    end
+    local function stopDrag(input)
+        if input.UserInputState == Enum.UserInputState.End then dragging = false end
+    end
+    local function updateDrag(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+    frame.InputBegan:Connect(startDrag)
+    frame.InputEnded:Connect(stopDrag)
+    label.InputBegan:Connect(startDrag)
+    label.InputEnded:Connect(stopDrag)
+    UIS.InputChanged:Connect(updateDrag)
+
+    return label
+end
+
+local labelCooldown = createCooldownUI()
+
+-- ====== Main Logic ======
+local beast, foundBeast, skill = nil, false, "Unknown"
+local cooldownStart, usedRunner, stalkerActive = nil, false, false
+
+-- Dots animation
+task.spawn(function()
+    local dots = 0
+    while true do
+        if not foundBeast and labelCooldown and labelCooldown.Parent then
+            dots = (dots % 3) + 1
+            labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
+        end
+        task.wait(0.5)
+    end
+end)
+
+local function isBeast(player)
+    if not player then return false end
+    local s = player:FindFirstChild("TempPlayerStatsModule")
+    return s and s:FindFirstChild("IsBeast") and s.IsBeast.Value
+end
+
+local function detectSkillDelayed()
+    task.delay(17, function() -- đợi 17 giây sau khi tìm thấy Beast
+        local power
+        repeat
+            power = Replicated:FindFirstChild("CurrentPower")
+            task.wait(0.5)
+        until power and power:IsA("StringValue")
+
+        if power then
+            skill = tostring(power.Value):lower()
+            showBanner("Beast chose " .. skill, "SkillChosenBanner")
+
+            power:GetPropertyChangedSignal("Value"):Connect(function()
+                skill = tostring(power.Value):lower()
+            end)
+        end
+    end)
+end
+
+-- Scan Beast
+task.spawn(function()
+    while true do
+        task.wait(0.05)
+
+        if foundBeast then
+            if not beast or not Players:FindFirstChild(beast.Name) or not isBeast(beast) then
+                beast, foundBeast, skill = nil, false, "Unknown"
+                cooldownStart, usedRunner, stalkerActive = nil, false, false
+                if labelCooldown then labelCooldown.Text = "Finding new beast..." end
+            end
+        end
+
+        if not foundBeast then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if isBeast(p) then
+                    beast, foundBeast = p, true
+                    showBanner(beast.Name .. " is Beast!!!", "BeastBanner")
+                    detectSkillDelayed()
+                    if labelCooldown then labelCooldown.Text = "Found beast!!!" end
+                    task.delay(2.5, function()
+                        if foundBeast and labelCooldown then
+                            labelCooldown.Text = "Cooldown: Perk Ready!!!"
+                        end
+                    end)
+                    break
+                end
+            end
+        end
+    end
+end)
+
+-- Monitor skill & cooldown
+RunService.Heartbeat:Connect(function()
+    if not foundBeast or not beast then return end
+    local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
+    local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
+    if not hum then return end
+
+    if skill == "runner" then
+        if hum.WalkSpeed > 19 and not usedRunner then
+            usedRunner = true
+            showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+            task.spawn(function()
+                local startUse = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown then
+                        labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
+                    end
+                    task.wait(0.1)
+                until tick() - startUse >= 3
+                cooldownStart = tick()
+            end)
+        end
+
+        if cooldownStart then
+            local remain = math.max(0, 22 - (tick() - cooldownStart))
+            if remain > 0 then
+                if labelCooldown then
+                    labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
+                end
+            else
+                cooldownStart, usedRunner = nil, false
+                if labelCooldown then labelCooldown.Text = "Cooldown: Runner Ready!!!" end
+            end
+        end
+
+    elseif skill == "stalker" then
+        local anyOff = false
+        for _, o in ipairs(beast.Character:GetDescendants()) do
+            if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
+                if not o.Enabled or (o.Brightness and o.Brightness == 0) then
+                    anyOff = true
+                    break
+                end
+            end
+        end
+
+        if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
+            stalkerActive = true
+            showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
+            task.spawn(function()
+                local startUse = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown then
+                        labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
+                    end
+                    task.wait(0.1)
+                until tick() - startUse >= 7
+
+                local startCD = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown then
+                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
+                    end
+                    task.wait(0.1)
+                until tick() - startCD >= 20
+
+                if foundBeast and labelCooldown then
+                    labelCooldown.Text = "Cooldown: Stalker Ready!!!"
+                end
+                stalkerActive = false
+            end)
+        end
+    end
+end)
