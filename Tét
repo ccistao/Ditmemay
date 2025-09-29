@@ -162,6 +162,12 @@ end
 
 
 -- Scan Beast
+local function isBeast(player)
+    if not player then return false end
+    local s = player:FindFirstChild("TempPlayerStatsModule")
+    return s and s:FindFirstChild("IsBeast") and s.IsBeast.Value
+end
+
 local runningScan = false
 task.spawn(function()
     if runningScan then return end
