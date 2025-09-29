@@ -22,6 +22,7 @@ end
 
 -- ====== Banner ======
 local function createRainbowBorder(frame)
+local function createRainbowBorder(frame)
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
@@ -34,8 +35,13 @@ local function createRainbowBorder(frame)
     })
     gradient.Parent = frame
 
-    RunService.RenderStepped:Connect(function()
-        if gradient then gradient.Rotation = (gradient.Rotation + 1) % 360 end
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if gradient and gradient.Parent then
+            gradient.Rotation = (gradient.Rotation + 1) % 360
+        else
+            conn:Disconnect() -- ngắt khi frame/gradient bị xóa
+        end
     end)
 end
 
@@ -119,47 +125,49 @@ local beast, foundBeast, skill = nil, false, "Unknown"
 local cooldownStart, usedRunner, stalkerActive = nil, false, false
 
 -- Dots animation
+local runningDots = false
 task.spawn(function()
+    if runningDots then return end -- đã chạy rồi thì không chạy thêm
+    runningDots = true
     local dots = 0
-    while true do
+    while task.wait(0.5) do
         if not foundBeast and labelCooldown and labelCooldown.Parent then
             dots = (dots % 3) + 1
             labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
         end
-        task.wait(0.5)
     end
 end)
 
-local function isBeast(player)
-    if not player then return false end
-    local s = player:FindFirstChild("TempPlayerStatsModule")
-    return s and s:FindFirstChild("IsBeast") and s.IsBeast.Value
-end
-
 local function detectSkillDelayed()
     task.delay(17, function() -- đợi 17 giây sau khi tìm thấy Beast
+        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+
         local power
         repeat
             power = Replicated:FindFirstChild("CurrentPower")
             task.wait(0.5)
         until power and power:IsA("StringValue")
 
-        if power then
-            skill = tostring(power.Value):lower()
-            showBanner("Beast chose " .. skill, "SkillChosenBanner")
+        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
 
-            power:GetPropertyChangedSignal("Value"):Connect(function()
+        skill = tostring(power.Value):lower()
+        showBanner("Beast chose " .. skill, "SkillChosenBanner")
+
+        power:GetPropertyChangedSignal("Value"):Connect(function()
+            if foundBeast and beast and Players:FindFirstChild(beast.Name) then
                 skill = tostring(power.Value):lower()
-            end)
-        end
+            end
+        end)
     end)
 end
 
--- Scan Beast
-task.spawn(function()
-    while true do
-        task.wait(0.05)
 
+-- Scan Beast
+local runningScan = false
+task.spawn(function()
+    if runningScan then return end
+    runningScan = true
+    while task.wait(0.05) do
         if foundBeast then
             if not beast or not Players:FindFirstChild(beast.Name) or not isBeast(beast) then
                 beast, foundBeast, skill = nil, false, "Unknown"
@@ -187,9 +195,15 @@ task.spawn(function()
     end
 end)
 
--- Monitor skill & cooldown
-RunService.Heartbeat:Connect(function()
-    if not foundBeast or not beast then return end
+-- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
+if _G.BeastHeartbeat then
+    _G.BeastHeartbeat:Disconnect()
+end
+
+_G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
+    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+    if not labelCooldown or not labelCooldown.Parent then return end  -- fix luôn lỗi 5
+
     local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
     local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
     if not hum then return end
@@ -202,7 +216,7 @@ RunService.Heartbeat:Connect(function()
                 local startUse = tick()
                 repeat
                     if not foundBeast then return end
-                    if labelCooldown then
+                    if labelCooldown and labelCooldown.Parent then
                         labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
                     end
                     task.wait(0.1)
@@ -214,12 +228,14 @@ RunService.Heartbeat:Connect(function()
         if cooldownStart then
             local remain = math.max(0, 22 - (tick() - cooldownStart))
             if remain > 0 then
-                if labelCooldown then
+                if labelCooldown and labelCooldown.Parent then
                     labelCooldown.Text = string.format("Cooldown: %.1fs", remain)
                 end
             else
                 cooldownStart, usedRunner = nil, false
-                if labelCooldown then labelCooldown.Text = "Cooldown: Runner Ready!!!" end
+                if labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = "Cooldown: Runner Ready!!!"
+                end
             end
         end
 
@@ -241,7 +257,7 @@ RunService.Heartbeat:Connect(function()
                 local startUse = tick()
                 repeat
                     if not foundBeast then return end
-                    if labelCooldown then
+                    if labelCooldown and labelCooldown.Parent then
                         labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
                     end
                     task.wait(0.1)
@@ -250,13 +266,13 @@ RunService.Heartbeat:Connect(function()
                 local startCD = tick()
                 repeat
                     if not foundBeast then return end
-                    if labelCooldown then
+                    if labelCooldown and labelCooldown.Parent then
                         labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
                     end
                     task.wait(0.1)
                 until tick() - startCD >= 20
 
-                if foundBeast and labelCooldown then
+                if foundBeast and labelCooldown and labelCooldown.Parent then
                     labelCooldown.Text = "Cooldown: Stalker Ready!!!"
                 end
                 stalkerActive = false
