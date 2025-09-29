@@ -22,7 +22,6 @@ end
 
 -- ====== Banner ======
 local function createRainbowBorder(frame)
-local function createRainbowBorder(frame)
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
