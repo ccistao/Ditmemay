@@ -237,34 +237,7 @@ makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
     end
 end)
 
-    local icon = Instance.new("ImageLabel", btn)
-    icon.BackgroundTransparency = 1
-    icon.AnchorPoint = Vector2.new(0.5,0.5)
-    icon.Position = UDim2.new(0.5,0,0.45,0)
-    icon.Size = UDim2.new(0.9,0,0.9,0)
-    icon.Image = iconId or ""
-
-    local bottom = Instance.new("TextLabel", btn)  
-    bottom.BackgroundTransparency = 1  
-    bottom.Position = UDim2.new(0, 0, 0.8, 0)  
-    bottom.Size = UDim2.new(1, 0, 0.2, 0)  
-    bottom.Text = text  
-    bottom.Font = Enum.Font.GothamBold  
-    bottom.TextColor3 = Color3.new(1,1,1)  
-    bottom.TextScaled = true  
-
-    activeStates[index] = false
-    btn.MouseButton1Down:Connect(function()
-        activeStates[index] = not activeStates[index]
-        if activeStates[index] then
-            btn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
-        end
-        if callback then callback(activeStates[index]) end
-    end)
-end
-
+    
 -- Hàm để bật/tắt Beast Tracker UI
 local function setBeastTrackerVisible(state)
     local PlayerGui = plr:WaitForChild("PlayerGui")
