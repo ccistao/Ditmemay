@@ -1,0 +1,161 @@
+local Players = game:GetService("Players")
+repeat task.wait() until Players.LocalPlayer
+local plr = Players.LocalPlayer
+
+-- Services
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Replicated = game:GetService("ReplicatedStorage")
+
+repeat task.wait() until plr:FindFirstChild("PlayerGui")
+
+-- ===== Toggle Beast Tracker Visible =====
+local function setBeastTrackerVisible(state)
+    local PlayerGui = plr:WaitForChild("PlayerGui")
+    for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner", "BeastCooldownUI", "BeastBanner"}) do
+        local g = PlayerGui:FindFirstChild(name)
+        if g then
+            g.Enabled = state
+        end
+    end
+end
+
+-- ===== MENU GUI =====
+local ver = "v0.3.4"
+local FTFHAX = Instance.new("ScreenGui")
+local MenusTabFrame = Instance.new("Frame")
+local CheatButton = Instance.new("ImageButton")
+local TextLabel = Instance.new("TextLabel")
+local MainMenuWindow = Instance.new("Frame")
+local TopBar_2 = Instance.new("Frame")
+local CloseButton_2 = Instance.new("TextButton")
+local PageTitleText_2 = Instance.new("TextLabel")
+local Body_2 = Instance.new("Frame")
+local UIGridLayout_2 = Instance.new("UIGridLayout")
+
+-- 6 nút
+local Button1 = Instance.new("ImageButton")
+local Button2 = Instance.new("ImageButton")
+local Button3 = Instance.new("ImageButton")
+local Button4 = Instance.new("ImageButton")
+local Button5 = Instance.new("ImageButton")
+local Button6 = Instance.new("ImageButton")
+
+-- MAIN GUI
+FTFHAX.Name = "FTFHAX"
+FTFHAX.Parent = plr:WaitForChild("PlayerGui")
+
+MenusTabFrame.Name = "MenusTabFrame"
+MenusTabFrame.Parent = FTFHAX
+MenusTabFrame.AnchorPoint = Vector2.new(1, 0.5)
+MenusTabFrame.BackgroundTransparency = 1
+MenusTabFrame.Position = UDim2.new(1, 0, 0.5, 0)
+MenusTabFrame.Size = UDim2.new(0.08, 0, 0.16, 0)
+MenusTabFrame.SizeConstraint = Enum.SizeConstraint.RelativeYY
+
+CheatButton.Name = "CheatButton"
+CheatButton.Parent = MenusTabFrame
+CheatButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+CheatButton.BackgroundTransparency = 0.5
+CheatButton.BorderSizePixel = 0
+CheatButton.Position = UDim2.new(0, 0, 0.75, 0)
+CheatButton.Size = UDim2.new(1, 0, 1, 0)
+CheatButton.SizeConstraint = Enum.SizeConstraint.RelativeXX
+CheatButton.Image = "rbxassetid://7059346373"
+
+TextLabel.Parent = CheatButton
+TextLabel.AnchorPoint = Vector2.new(0, 1)
+TextLabel.BackgroundTransparency = 1
+TextLabel.Position = UDim2.new(0, 0, 1, 0)
+TextLabel.Size = UDim2.new(1, 0, 0.2, 0)
+TextLabel.Font = Enum.Font.GothamBold
+TextLabel.Text = "setting"
+TextLabel.TextColor3 = Color3.new(1,1,1)
+TextLabel.TextScaled = true
+TextLabel.TextStrokeTransparency = 0
+TextLabel.TextYAlignment = Enum.TextYAlignment.Bottom
+
+-- MAIN MENU
+MainMenuWindow.Name = "MainMenuWindow"
+MainMenuWindow.Parent = FTFHAX
+MainMenuWindow.AnchorPoint = Vector2.new(0.5, 0.5)
+MainMenuWindow.BackgroundColor3 = Color3.fromRGB(47, 47, 47)
+MainMenuWindow.BorderSizePixel = 2
+MainMenuWindow.Position = UDim2.new(0.5, 0, 0.5, -18)
+MainMenuWindow.Size = UDim2.new(0, 420, 0, 320)
+MainMenuWindow.Visible = false
+
+TopBar_2.Name = "TopBar"
+TopBar_2.Parent = MainMenuWindow
+TopBar_2.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+TopBar_2.Size = UDim2.new(1, 0, 0, 40)
+
+CloseButton_2.Name = "CloseButton"
+CloseButton_2.Parent = TopBar_2
+CloseButton_2.AnchorPoint = Vector2.new(1, 0)
+CloseButton_2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+CloseButton_2.Position = UDim2.new(1, -1, 0, 1)
+CloseButton_2.Size = UDim2.new(0, 36, 0, 36)
+CloseButton_2.Text = "X"
+CloseButton_2.Font = Enum.Font.GothamBold
+CloseButton_2.TextColor3 = Color3.new(1,1,1)
+CloseButton_2.TextScaled = true
+
+PageTitleText_2.Name = "PageTitleText"
+PageTitleText_2.Parent = TopBar_2
+PageTitleText_2.BackgroundTransparency = 1
+PageTitleText_2.Position = UDim2.new(0, 10, 0, 0)
+PageTitleText_2.Size = UDim2.new(0.8, 0, 0, 40)
+PageTitleText_2.Text = "Extended Flee The Facility"
+PageTitleText_2.Font = Enum.Font.GothamBold
+PageTitleText_2.TextColor3 = Color3.new(1,1,1)
+PageTitleText_2.TextScaled = true
+PageTitleText_2.TextXAlignment = Enum.TextXAlignment.Left
+
+Body_2.Name = "Body"
+Body_2.Parent = MainMenuWindow
+Body_2.AnchorPoint = Vector2.new(0.5, 0)
+Body_2.BackgroundTransparency = 1
+Body_2.Position = UDim2.new(0.5, 0, 0, 45)
+Body_2.Size = UDim2.new(1, -10, 1, -50)
+
+UIGridLayout_2.Parent = Body_2
+UIGridLayout_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIGridLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
+UIGridLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
+UIGridLayout_2.CellSize = UDim2.new(0, 132, 0, 132)
+
+-- Trạng thái on/off
+local activeStates = {}
+local function makeButton(btn, text, iconId, index, callback)
+    btn.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+    btn.Size = UDim2.new(0, 100, 0, 100)
+    btn.Parent = Body_2
+    local icon = Instance.new("ImageLabel")
+    icon.Parent = btn
+    icon.BackgroundTransparency = 1
+    icon.AnchorPoint = Vector2.new(0.5,0.5)
+    icon.Position = UDim2.new(0.5,0,0.45,0)
+    icon.Size = UDim2.new(0.9,0,0.9,0)
+    icon.Image = iconId or ""
+    local bottom = Instance.new("TextLabel")  
+    bottom.Parent = btn  
+    bottom.BackgroundTransparency = 1  
+    bottom.Position = UDim2.new(0, 0, 0.8, 0)  
+    bottom.Size = UDim2.new(1, 0, 0.2, 0)  
+    bottom.Text = text  
+    bottom.Font = Enum.Font.GothamBold  
+    bottom.TextColor3 = Color3.new(1,1,1)  
+    bottom.TextScaled = true  
+    activeStates[index] = false
+    btn.MouseButton1Down:Connect(function()
+        activeStates[index] = not activeStates[index]
+        if activeStates[index] then
+            btn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+        end
+        if callback then callback(activeStates[index]) end
+    end)
+end
