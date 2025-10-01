@@ -151,6 +151,65 @@ local function makeButton(btn, text, iconId, index, callback)
     btn.Size = UDim2.new(0, 100, 0, 100)
     btn.Parent = Body_2
 
+-- 6 nút menu
+
+makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
+    if state then
+        print("Wallhop view bật")
+        -- chèn script Wallhop của bạn vào đây
+    else
+        print("Wallhop view tắt")
+        -- code tắt wallhop
+    end
+end)
+
+makeButton(Button2,"Flashlight","rbxassetid://106585954087372",2,function(state)
+    if state then
+        print("Flashlight bật")
+        -- chèn script Flashlight vào đây
+    else
+        print("Flashlight tắt")
+        -- code tắt flashlight
+    end
+end)
+
+makeButton(Button3,"Self muting","rbxassetid://90332761263250",3,function(state)
+    if state then
+        print("Self muting bật")
+        -- chèn script Self muting vào đây
+    else
+        print("Self muting tắt")
+        -- code tắt self muting
+    end
+end)
+
+makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
+    if state then
+        startBeastTracker()
+        setBeastTrackerVisible(true)
+    else
+        stopBeastTracker()
+    end
+end)
+
+makeButton(Button5,"Survivor tracker","rbxassetid://90682070728446",5,function(state)
+    if state then
+        print("Survivor tracker bật")
+        -- chèn script Survivor tracker vào đây
+    else
+        print("Survivor tracker tắt")
+        -- code tắt survivor tracker
+    end
+end)
+
+makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
+    if state then
+        startPCProgress()
+    else
+        stopPCProgress()
+    end
+end)
+
     local icon = Instance.new("ImageLabel", btn)
     icon.BackgroundTransparency = 1
     icon.AnchorPoint = Vector2.new(0.5,0.5)
