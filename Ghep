@@ -187,6 +187,61 @@ end
 local beastTrackerRunning = false
 local beastConnections = {}
 
+-- Tạo cooldown GUI (duy nhất 1 lần, ẩn khi OFF)
+local function ensureCooldownUI()
+    local PlayerGui = plr:WaitForChild("PlayerGui")
+    local gui = PlayerGui:FindFirstChild("BeastCooldownUI")
+    if not gui then
+        gui = Instance.new("ScreenGui")
+        gui.Name = "BeastCooldownUI"
+        gui.ResetOnSpawn = false
+        gui.IgnoreGuiInset = true
+        gui.Enabled = false
+        gui.Parent = PlayerGui
+
+        local frame = Instance.new("Frame", gui)
+        frame.Size = UDim2.new(0,180,0,40)
+        frame.Position = UDim2.new(0.5,-90,0.8,0)
+        frame.BackgroundTransparency = 0.3
+        frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+        frame.BorderSizePixel = 0
+        frame.Active = true
+
+        local label = Instance.new("TextLabel", frame)
+        label.Name = "CooldownLabel"
+        label.Size = UDim2.new(1,0,1,0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.new(1,1,1)
+        label.Font = Enum.Font.SourceSansBold
+        label.TextScaled = true
+        label.Text = "Finding new beast..."
+
+        -- Dragging
+        local dragging, dragStart, startPos
+        local function startDrag(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging, dragStart, startPos = true, input.Position, frame.Position
+            end
+        end
+        local function stopDrag(input)
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end
+        local function updateDrag(input)
+            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dragStart
+                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                           startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end
+        frame.InputBegan:Connect(startDrag)
+        frame.InputEnded:Connect(stopDrag)
+        label.InputBegan:Connect(startDrag)
+        label.InputEnded:Connect(stopDrag)
+        table.insert(beastConnections, UIS.InputChanged:Connect(updateDrag))
+    end
+    return gui:FindFirstChild("CooldownLabel")
+end
+
 local function disconnectBeastTracker()
     for _,c in ipairs(beastConnections) do
         if typeof(c) == "RBXScriptConnection" then
@@ -198,6 +253,9 @@ end
 
 local function stopBeastTracker()
     disconnectBeastTracker()
+    local PlayerGui = plr:WaitForChild("PlayerGui")
+    local gui = PlayerGui:FindFirstChild("BeastCooldownUI")
+    if gui then gui.Enabled = false end -- ẩn chứ không xoá
     setBeastTrackerVisible(false)
     beastTrackerRunning = false
 end
@@ -206,13 +264,20 @@ local function startBeastTracker()
     if beastTrackerRunning then return end
     beastTrackerRunning = true
 
+    local labelCooldown = ensureCooldownUI()
+    if labelCooldown and labelCooldown.Parent and labelCooldown.Parent.Parent then
+        labelCooldown.Parent.Parent.Enabled = true
+    end
+
     local PlayerGui = plr:WaitForChild("PlayerGui")
 
     -- Cave check (chỉ giữ 1 lần)
     local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
     local function isOutsideCave(p)
         if not p then return false end
-        return p.X < caveMin.X or p.X > caveMax.X or p.Y < caveMin.Y or p.Y > caveMax.Y or p.Z < caveMin.Z or p.Z > caveMax.Z
+        return p.X < caveMin.X or p.X > caveMax.X or
+               p.Y < caveMin.Y or p.Y > caveMax.Y or
+               p.Z < caveMin.Z or p.Z > caveMax.Z
     end
 
     -- Rainbow border
@@ -266,64 +331,89 @@ local function startBeastTracker()
         end)
     end
 
-    -- Cooldown UI
-    local function createCooldownUI()
-        local gui = Instance.new("ScreenGui", PlayerGui)
-        gui.Name = "BeastCooldownUI"
-        gui.ResetOnSpawn = false
-        gui.IgnoreGuiInset = true
+    -- ==== CORE LOGIC detect Beast, skill, cooldown ====
+    local beast, foundBeast, skill = nil, false, "Unknown"
+    local runnerCD, stalkerCD = false, false
 
-        local frame = Instance.new("Frame", gui)
-        frame.Size = UDim2.new(0,180,0,40)
-        frame.Position = UDim2.new(0.5,-90,0.8,0)
-        frame.BackgroundTransparency = 0.3
-        frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-        frame.BorderSizePixel = 0
-        frame.Active = true
-
-        local label = Instance.new("TextLabel", frame)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.new(1,1,1)
-        label.Font = Enum.Font.SourceSansBold
-        label.TextScaled = true
-        label.Text = "Finding new beast..."
-
-        -- Dragging
-        local dragging, dragStart, startPos
-        local function startDrag(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging, dragStart, startPos = true, input.Position, frame.Position
+    local function detectBeast()
+        for _, p in ipairs(Players:GetPlayers()) do
+            local stats = p:FindFirstChild("TempPlayerStatsModule") or p:FindFirstChild("PlayerStats")
+            if stats and stats:FindFirstChild("IsBeast") and stats.IsBeast.Value then
+                return p
             end
         end
-        local function stopDrag(input)
-            if input.UserInputState == Enum.UserInputState.End then dragging = false end
-        end
-        local function updateDrag(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end
-        frame.InputBegan:Connect(startDrag)
-        frame.InputEnded:Connect(stopDrag)
-        label.InputBegan:Connect(startDrag)
-        label.InputEnded:Connect(stopDrag)
-        table.insert(beastConnections, UIS.InputChanged:Connect(updateDrag))
-
-        return label
+        return nil
     end
 
-    local labelCooldown = createCooldownUI()
+    local function detectSkill(b)
+        if not b then return "Unknown" end
+        local stats = b:FindFirstChild("TempPlayerStatsModule") or b:FindFirstChild("PlayerStats")
+        if not stats then return "Unknown" end
+        local chosen = stats:FindFirstChild("SkillChosen")
+        return chosen and chosen.Value or "Unknown"
+    end
 
-    -- ==== Core logic (detect Beast, skill, cooldown) ====
-    -- Toàn bộ đoạn gốc của bạn từ:
-    --   local beast, foundBeast, skill = nil, false, "Unknown"
-    -- cho đến hết phần xử lý Runner / Stalker / Cooldown
-    -- Bạn dán nguyên đoạn code đó vào đây.
+    task.spawn(function()
+        while beastTrackerRunning do
+            beast = detectBeast()
+            if beast and not foundBeast then
+                foundBeast = true
+                showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
+                skill = detectSkill(beast)
+                showBanner("Beast chọn "..skill, "SkillChosenBanner")
+            end
+            task.wait(1)
+        end
+    end)
+
+    -- Runner cooldown
+    local function onRunnerUsed()
+        if runnerCD then return end
+        runnerCD = true
+        showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
+        task.delay(2, function()
+            for i=30,1,-1 do
+                if labelCooldown then labelCooldown.Text = "Runner CD: "..i.."s" end
+                task.wait(1)
+            end
+            if labelCooldown then labelCooldown.Text = "Ready!" end
+            runnerCD = false
+        end)
+    end
+
+    -- Stalker cooldown
+    local function onStalkerUsed()
+        if stalkerCD then return end
+        stalkerCD = true
+        showBanner("Beast đã dùng Q (Stalker) !!!", "StalkerUsedBanner")
+        task.delay(7, function()
+            for i=20,1,-1 do
+                if labelCooldown then labelCooldown.Text = "Stalker CD: "..i.."s" end
+                task.wait(1)
+            end
+            if labelCooldown then labelCooldown.Text = "Ready!" end
+            stalkerCD = false
+        end)
+    end
+
+    -- Hook vào skill Beast
+    task.spawn(function()
+        while beastTrackerRunning do
+            if beast and beast.Character then
+                local hrp = beast.Character:FindFirstChild("HumanoidRootPart")
+                if skill == "Runner" and hrp and hrp.AssemblyLinearVelocity.Magnitude > 70 and isOutsideCave(hrp.Position) then
+                    onRunnerUsed()
+                end
+                if skill == "Stalker" and not beast.Character:FindFirstChild("Light") then
+                    onStalkerUsed()
+                end
+            end
+            task.wait(0.2)
+        end
+    end)
 end
 
--- Nút 4 gọi start/stop
+-- Nút bật/tắt
 makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
     if state then
         startBeastTracker()
@@ -332,7 +422,6 @@ makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
         stopBeastTracker()
     end
 end)
-
 -- ===== PC Progress =====
 local pcProgressRunning = false
 local pcConnections = {}
