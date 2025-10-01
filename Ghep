@@ -237,15 +237,10 @@ makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
     end
 end)
 
-    
--- Hàm để bật/tắt Beast Tracker UI
 local function setBeastTrackerVisible(state)
-    local PlayerGui = plr:WaitForChild("PlayerGui")
-    for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner", "BeastCooldownUI", "BeastBanner"}) do
-        local g = PlayerGui:FindFirstChild(name)
-        if g then
-            g.Enabled = state
-        end
+    local g = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+    if g and g:IsA("ScreenGui") then
+        g.Enabled = state
     end
 end
 
@@ -798,15 +793,6 @@ local function startPCProgress()
         end))
     end
 end
-
--- Nút 6 gọi start/stop
-makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
-    if state then
-        startPCProgress()
-    else
-        stopPCProgress()
-    end
-end)
 
 -- ===== Sự kiện mở/đóng menu =====
 CheatButton.MouseButton1Down:Connect(function()
