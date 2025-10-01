@@ -159,3 +159,751 @@ local function makeButton(btn, text, iconId, index, callback)
         if callback then callback(activeStates[index]) end
     end)
 end
+
+-- ===== Các nút =====
+makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
+    if state then
+        -- bật script 1
+    else
+        -- tắt script 1
+    end
+end)
+
+makeButton(Button2,"Flashlight","rbxassetid://106585954087372",2,function(state)
+    if state then
+        -- bật script 2
+    else
+        -- tắt script 2
+    end
+end)
+
+makeButton(Button3,"Self muting","rbxassetid://90332761263250",3,function(state)
+    if state then
+        -- bật script 3
+    else
+        -- tắt script 3
+    end
+end)
+
+-- 🔹 Beast Tracker – tích hợp toggle
+makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
+    if state then
+        setBeastTrackerVisible(true)
+    else
+        setBeastTrackerVisible(false)
+    end
+end)
+
+makeButton(Button5,"Survivor tracker","rbxassetid://90682070728446",5,function(state)
+    if state then
+        -- bật script 5
+    else
+        -- tắt script 5
+    end
+end)
+
+-- PC Progress sẽ viết đầy đủ trong PHẦN 3
+makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
+    if state then
+        -- bật script 6 (PC Progress)
+    else
+        -- tắt script 6
+    end
+end)
+
+-- ===== Beast Tracker code gốc (đã sửa) =====
+-- (Phần này copy nguyên từ file beast track.txt, chỉ bỏ đoạn "Xóa GUI cũ")
+local PlayerGui = plr:WaitForChild("PlayerGui")
+
+-- Cave check
+local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
+local function isOutsideCave(p)
+    if not p then return false end
+    return p.X < caveMin.X or p.X > caveMax.X or p.Y < caveMin.Y or p.Y > caveMax.Y or p.Z < caveMin.Z or p.Z > caveMax.Z
+end
+
+-- ====== Banner ======
+local function createRainbowBorder(frame)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 127, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(75, 0, 130)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(148, 0, 211)),
+    })
+    gradient.Parent = frame
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if gradient and gradient.Parent then
+            gradient.Rotation = (gradient.Rotation + 1) % 360
+        else
+            conn:Disconnect()
+        end
+    end)
+end
+
+local function showBanner(text, name)
+    if PlayerGui:FindFirstChild(name) then return end
+    local gui = Instance.new("ScreenGui", PlayerGui)
+    gui.Name = name
+
+    local label = Instance.new("TextLabel", gui)
+    label.Size, label.Position = UDim2.new(0, 250, 0, 40), UDim2.new(1, 10, 0, 10)
+    label.BackgroundColor3, label.TextColor3 = Color3.fromRGB(30, 30, 30), Color3.new(1, 1, 1)
+    label.Font, label.TextScaled, label.Text = Enum.Font.SourceSansBold, true, text
+
+    createRainbowBorder(label)
+
+    local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, -270, 0, 10)})
+    local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, 10, 0, 10)})
+
+    tweenIn:Play()
+    tweenIn.Completed:Wait()
+    task.delay(3.4, function()
+        tweenOut:Play()
+        tweenOut.Completed:Wait()
+        gui:Destroy()
+    end)
+end
+
+-- ====== Cooldown UI ======
+local function createCooldownUI()
+    local gui = Instance.new("ScreenGui")
+    gui.Parent = PlayerGui
+    gui.Name = "BeastCooldownUI"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0,180,0,40)
+    frame.Position = UDim2.new(0.5,-90,0.8,0)
+    frame.BackgroundTransparency = 0.3
+    frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextScaled = true
+    label.Text = "Finding new beast..."
+
+    -- Drag
+    local dragging, dragStart, startPos
+    local function startDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging, dragStart, startPos = true, input.Position, frame.Position
+        end
+    end
+    local function stopDrag(input)
+        if input.UserInputState == Enum.UserInputState.End then dragging = false end
+    end
+    local function updateDrag(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+    frame.InputBegan:Connect(startDrag)
+    frame.InputEnded:Connect(stopDrag)
+    label.InputBegan:Connect(startDrag)
+    label.InputEnded:Connect(stopDrag)
+    UIS.InputChanged:Connect(updateDrag)
+
+    return label
+end
+
+local labelCooldown = createCooldownUI()
+
+local Players = game:GetService("Players")
+local Replicated = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Xóa GUI cũ
+for _, name in ipairs({"RunnerUsedBanner", "SkillChosenBanner", "StalkerUsedBanner", "BeastCooldownUI", "BeastBanner"}) do
+    local old = PlayerGui:FindFirstChild(name)
+    if old then old:Destroy() end
+end
+
+-- Cave check
+local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
+local function isOutsideCave(p)
+    if not p then return false end
+    return p.X < caveMin.X or p.X > caveMax.X or p.Y < caveMin.Y or p.Y > caveMax.Y or p.Z < caveMin.Z or p.Z > caveMax.Z
+end
+
+-- ====== Banner ======
+local function createRainbowBorder(frame)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 127, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(75, 0, 130)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(148, 0, 211)),
+    })
+    gradient.Parent = frame
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if gradient and gradient.Parent then
+            gradient.Rotation = (gradient.Rotation + 1) % 360
+        else
+            conn:Disconnect() -- ngắt khi frame/gradient bị xóa
+        end
+    end)
+end
+
+local function showBanner(text, name)
+    if PlayerGui:FindFirstChild(name) then return end
+    local gui = Instance.new("ScreenGui", PlayerGui)
+    gui.Name = name
+
+    local label = Instance.new("TextLabel", gui)
+    label.Size, label.Position = UDim2.new(0, 250, 0, 40), UDim2.new(1, 10, 0, 10)
+    label.BackgroundColor3, label.TextColor3 = Color3.fromRGB(30, 30, 30), Color3.new(1, 1, 1)
+    label.Font, label.TextScaled, label.Text = Enum.Font.SourceSansBold, true, text
+
+    createRainbowBorder(label)
+
+    local tweenIn = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, -270, 0, 10)})
+    local tweenOut = TweenService:Create(label, TweenInfo.new(0.4), {Position = UDim2.new(1, 10, 0, 10)})
+
+    tweenIn:Play()
+    tweenIn.Completed:Wait()
+    task.delay(3.4, function()
+        tweenOut:Play()
+        tweenOut.Completed:Wait()
+        gui:Destroy()
+    end)
+end
+
+-- ====== Cooldown UI ======
+local function createCooldownUI()
+    local gui = Instance.new("ScreenGui")
+    gui.Parent = PlayerGui
+    gui.Name = "BeastCooldownUI"
+    gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
+
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0,180,0,40)
+    frame.Position = UDim2.new(0.5,-90,0.8,0)
+    frame.BackgroundTransparency = 0.3
+    frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.new(1,1,1)
+    label.Font = Enum.Font.SourceSansBold
+    label.TextScaled = true
+    label.Text = "Finding new beast..."
+
+    -- Drag
+    local dragging, dragStart, startPos
+    local function startDrag(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging, dragStart, startPos = true, input.Position, frame.Position
+        end
+    end
+    local function stopDrag(input)
+        if input.UserInputState == Enum.UserInputState.End then dragging = false end
+    end
+    local function updateDrag(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end
+    frame.InputBegan:Connect(startDrag)
+    frame.InputEnded:Connect(stopDrag)
+    label.InputBegan:Connect(startDrag)
+    label.InputEnded:Connect(stopDrag)
+    UIS.InputChanged:Connect(updateDrag)
+
+    return label
+end
+
+local labelCooldown = createCooldownUI()
+
+-- ====== Main Logic ======
+local beast, foundBeast, skill = nil, false, "Unknown"
+local cooldownStart, usedRunner, stalkerActive = nil, false, false
+
+-- Dots animation
+local runningDots = false
+task.spawn(function()
+    if runningDots then return end -- đã chạy rồi thì không chạy thêm
+    runningDots = true
+    local dots = 0
+    while task.wait(0.5) do
+        if not foundBeast and labelCooldown and labelCooldown.Parent then
+            dots = (dots % 3) + 1
+            labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
+        end
+    end
+end)
+-- Detect skill khi game bắt đầu
+local function detectSkillWhenGameActive()
+    task.spawn(function()
+        local gameActive = Replicated:WaitForChild("IsGameActive")
+        -- chờ tới khi game thực sự bắt đầu
+        if gameActive:IsA("BoolValue") then
+            repeat task.wait(0.5) until gameActive.Value == true
+        end
+
+        -- đảm bảo Beast vẫn tồn tại
+        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+
+        local power
+        repeat
+            power = Replicated:FindFirstChild("CurrentPower")
+            task.wait(0.5)
+        until power and power:IsA("StringValue")
+
+        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+
+        skill = tostring(power.Value):lower()
+        showBanner("Beast chose " .. skill, "SkillChosenBanner")
+
+        power:GetPropertyChangedSignal("Value"):Connect(function()
+            if foundBeast and beast and Players:FindFirstChild(beast.Name) then
+                skill = tostring(power.Value):lower()
+            end
+        end)
+    end)
+end
+
+-- Scan Beast
+local function isBeast(player)
+    if not player then return false end
+    local s = player:FindFirstChild("TempPlayerStatsModule")
+    return s and s:FindFirstChild("IsBeast") and s.IsBeast.Value
+end
+
+local runningScan = false
+task.spawn(function()
+    if runningScan then return end
+    runningScan = true
+    while task.wait(0.05) do
+        if foundBeast then
+            if not beast or not Players:FindFirstChild(beast.Name) or not isBeast(beast) then
+                beast, foundBeast, skill = nil, false, "Unknown"
+                cooldownStart, usedRunner, stalkerActive = nil, false, false
+                if labelCooldown then labelCooldown.Text = "Finding new beast..." end
+            end
+        end
+
+        if not foundBeast then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if isBeast(p) then
+                    beast, foundBeast = p, true
+                    showBanner(beast.Name .. " is Beast!!!", "BeastBanner")
+                    detectSkillWhenGameActive()
+                    if labelCooldown then labelCooldown.Text = "Found beast!!!" end
+                    task.delay(2.5, function()
+                        if foundBeast and labelCooldown then
+                            labelCooldown.Text = "Cooldown: Perk Ready!!!"
+                        end
+                    end)
+                    break
+                end
+            end
+        end
+    end
+end)
+
+-- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
+if _G.BeastHeartbeat then
+    _G.BeastHeartbeat:Disconnect()
+end
+
+_G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
+    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+    if not labelCooldown or not labelCooldown.Parent then return end
+
+    local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
+    local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
+    if not hum then return end
+
+    -- RUNNER
+    if skill == "runner" then
+        if hum.WalkSpeed > 19 and not usedRunner then
+            usedRunner = true
+            showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+
+            task.spawn(function()
+                local startUse = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
+                    end
+                    RunService.Heartbeat:Wait()
+                until tick() - startUse >= 3
+
+                local startCD = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
+                    end
+                    RunService.Heartbeat:Wait()
+                until tick() - startCD >= 22
+
+                if foundBeast and labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = "Cooldown: Runner Ready!!!"
+                end
+                usedRunner = false
+            end)
+        end
+
+    -- STALKER
+    elseif skill == "stalker" then
+        local anyOff = false
+        for _, o in ipairs(beast.Character:GetDescendants()) do
+            if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
+                if not o.Enabled or (o.Brightness and o.Brightness == 0) then
+                    anyOff = true
+                    break
+                end
+            end
+        end
+
+        if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
+            stalkerActive = true
+            showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
+
+            task.spawn(function()
+                local startUse = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
+                    end
+                    RunService.Heartbeat:Wait()
+                until tick() - startUse >= 7
+
+                local startCD = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
+                    end
+                    RunService.Heartbeat:Wait()
+                until tick() - startCD >= 20
+
+                if foundBeast and labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = "Cooldown: Stalker Ready!!!"
+                end
+                stalkerActive = false
+            end)
+        end
+    end
+end)
+
+-- ================== PC Progress Script ==================
+local RS = game:GetService("ReplicatedStorage")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = plr
+local RunService = game:GetService("RunService")
+
+local pcLabels, finished, pcState, hookedPCs, lastPercent = {}, {}, {}, {}, {}
+local pendingUpdate = {}
+local UPDATE_INTERVAL = 0.1
+local SHOW_DISTANCE_SURV = 40
+local SHOW_DISTANCE_BEAST = 20
+local currentShowDist = SHOW_DISTANCE_SURV
+local CHECK_OFFSET = Vector3.new(0, 1, 0)
+local CHECK_RADIUS = 2
+
+-- Billboard
+local function findAttachPart(pc)
+    if pc:IsA("Model") then
+        local scr = pc:FindFirstChild("Screen")
+        if scr and scr:IsA("BasePart") then return scr end
+        if pc.PrimaryPart then return pc.PrimaryPart end
+        for _,d in ipairs(pc:GetDescendants()) do
+            if d:IsA("BasePart") then return d end
+        end
+    elseif pc:IsA("BasePart") then
+        return pc
+    end
+    return nil
+end
+
+local function createBillboard(pc)
+    if pcLabels[pc] then return pcLabels[pc] end
+    local part = findAttachPart(pc)
+    if not part then return end
+    local bb = Instance.new("BillboardGui")
+    bb.Size = UDim2.new(0, 100, 0, 40)
+    bb.StudsOffset = Vector3.new(0, 2, 0)
+    bb.AlwaysOnTop = true
+    bb.Adornee = part
+    bb.Parent = part
+    local tl = Instance.new("TextLabel")
+    tl.Size = UDim2.new(1,0,1,0)
+    tl.BackgroundTransparency = 1
+    tl.TextColor3 = Color3.new(1,1,1)
+    tl.Font = Enum.Font.GothamBold
+    tl.TextScaled = true
+    tl.Text = "0%"
+    tl.Visible = true
+    tl.Parent = bb
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1
+    stroke.Color = Color3.new(0,0,0)
+    stroke.Parent = tl
+    pcLabels[pc] = {label = tl, bb = bb, part = part}
+    lastPercent[pc] = 0
+    return pcLabels[pc]
+end
+
+local function clearAll()
+    for _,v in pairs(pcLabels) do
+        if v.bb then v.bb:Destroy() end
+    end
+    pcLabels, finished, pcState, hookedPCs, lastPercent, pendingUpdate = {}, {}, {}, {}, {}, {}
+end
+
+-- Visibility check
+local function isVisible(part)
+    if not part then return false end
+    local camPos = Camera.CFrame.Position
+    local partPos = part.Position + CHECK_OFFSET
+    local dir = (partPos - camPos).Unit * (partPos - camPos).Magnitude
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {LocalPlayer.Character, unpack(Players:GetPlayers())}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    local result = workspace:Raycast(camPos, dir, params)
+    if not result then return true end
+    if result.Instance:IsDescendantOf(part.Parent) then
+        return true
+    end
+    for _, offset in ipairs({
+        Vector3.new(CHECK_RADIUS, 0, 0),
+        Vector3.new(-CHECK_RADIUS, 0, 0),
+        Vector3.new(0, CHECK_RADIUS, 0),
+        Vector3.new(0, -CHECK_RADIUS, 0),
+        Vector3.new(0, 0, CHECK_RADIUS),
+        Vector3.new(0, 0, -CHECK_RADIUS)
+    }) do
+        local p = partPos + offset
+        local dir2 = (p - camPos).Unit * (p - camPos).Magnitude
+        local r = workspace:Raycast(camPos, dir2, params)
+        if not r or r.Instance:IsDescendantOf(part.Parent) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Progress update
+local function queueProgress(pc, value)
+    if finished[pc] then return end
+    if pcState[pc] == "ERROR" or pcState[pc] == "DONE" then return end
+    local percent = math.floor(value * 100 + 0.5)
+    if percent >= 100 then
+        percent = 100
+        finished[pc] = true
+    end
+    if percent ~= (lastPercent[pc] or -1) then
+        if percent == 0 and (lastPercent[pc] or 0) > 0 then
+            return
+        end
+        lastPercent[pc] = percent
+        pendingUpdate[pc] = tostring(percent).."%"
+    end
+end
+
+task.spawn(function()
+    while true do
+        for pc,text in pairs(pendingUpdate) do
+            local pack = createBillboard(pc)
+            if pack then
+                if pack.label.Text ~= text then
+                    pack.label.Text = text
+                    pack.label.TextColor3 = Color3.new(1,1,1)
+                end
+            end
+            pendingUpdate[pc] = nil
+        end
+        task.wait(UPDATE_INTERVAL)
+    end
+end)
+
+-- Hook vào ActionProgress
+local function nearestPC(pos, maxDist)
+    local best,bd = nil, maxDist or 30
+    for pc,_ in pairs(pcLabels) do
+        local part = pcLabels[pc].part
+        if part then
+            local dist = (part.Position - pos).Magnitude
+            if dist < bd then
+                best, bd = pc, dist
+            end
+        end
+    end
+    return best
+end
+
+local function onActionProgress(plr, value)
+    local tps = plr:FindFirstChild("TempPlayerStatsModule")
+    if not tps then return end
+    local currentAnim = tps:FindFirstChild("CurrentAnimation")
+    if not currentAnim or currentAnim.Value ~= "Typing" then return end
+    if not plr.Character then return end
+    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local pc = nearestPC(hrp.Position, 35)
+    if pc then
+        queueProgress(pc, value)
+    end
+end
+
+local function hookPlayer(plr)
+    local function attach(c)
+        if c.Name == "TempPlayerStatsModule" then
+            local ap = c:WaitForChild("ActionProgress", 10)
+            if ap and ap:IsA("NumberValue") then
+                ap:GetPropertyChangedSignal("Value"):Connect(function()
+                    onActionProgress(plr, ap.Value)
+                end)
+            end
+        end
+    end
+    plr.ChildAdded:Connect(attach)
+    local tps = plr:FindFirstChild("TempPlayerStatsModule")
+    if tps then attach(tps) end
+end
+for _,p in ipairs(Players:GetPlayers()) do hookPlayer(p) end
+Players.PlayerAdded:Connect(hookPlayer)
+
+-- Beast check để chỉnh khoảng cách hiển thị
+local function updateRole()
+    local stats = LocalPlayer:FindFirstChild("TempPlayerStatsModule") or LocalPlayer:FindFirstChild("PlayerStats")
+    if stats then
+        local isBeast = stats:FindFirstChild("IsBeast")
+        if isBeast then
+            if isBeast.Value == true then
+                currentShowDist = SHOW_DISTANCE_BEAST
+            else
+                currentShowDist = SHOW_DISTANCE_SURV
+            end
+        end
+    end
+end
+local function watchStats()
+    local stats = LocalPlayer:FindFirstChild("TempPlayerStatsModule") or LocalPlayer:FindFirstChild("PlayerStats")
+    if stats then
+        local isBeast = stats:FindFirstChild("IsBeast")
+        if isBeast then
+            isBeast.Changed:Connect(function()
+                updateRole()
+            end)
+            updateRole()
+        end
+    end
+end
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    watchStats()
+end)
+watchStats()
+
+-- Screen state (DONE / ERROR)
+local function applyScreenState(pc, c)
+    local pack = createBillboard(pc)
+    if not pack then return end
+    if c.G > c.R + 0.2 and c.G > c.B + 0.2 then
+        pcState[pc] = "DONE"
+        pack.label.Text = "DONE"
+        pack.label.TextColor3 = Color3.new(0,1,0)
+    elseif c.R > c.G + 0.2 and c.R > c.B + 0.2 then
+        pcState[pc] = "ERROR"
+        pack.label.Text = "ERROR"
+        pack.label.TextColor3 = Color3.new(1,0,0)
+    else
+        if not finished[pc] then
+            pcState[pc] = nil
+        end
+    end
+end
+local function watchPC(pc)
+    if hookedPCs[pc] then return end
+    hookedPCs[pc] = true
+    local scr = pc:FindFirstChild("Screen")
+    if scr and scr:IsA("BasePart") then
+        applyScreenState(pc, scr.Color)
+        scr:GetPropertyChangedSignal("Color"):Connect(function()
+            applyScreenState(pc, scr.Color)
+        end)
+    end
+end
+
+-- Map Scan
+task.spawn(function()
+    while true do
+        local map = RS:FindFirstChild("CurrentMap") and RS.CurrentMap.Value
+        if map then
+            for _,d in ipairs(map:GetDescendants()) do
+                if d.Name == "ComputerTable" then
+                    createBillboard(d)
+                    watchPC(d)
+                end
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+-- Render visibility
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local camPos = Camera.CFrame.Position
+    for pc,pack in pairs(pcLabels) do
+        local part,label = pack.part, pack.label
+        if part and label then
+            local origin = hrp and hrp.Position or camPos
+            local dist = (part.Position - origin).Magnitude
+            if dist <= currentShowDist and isVisible(part) then
+                label.Visible = true
+            else
+                label.Visible = false
+            end
+        end
+    end
+end)
+
+-- Map Change reset
+if RS:FindFirstChild("CurrentMap") then
+    RS.CurrentMap.Changed:Connect(function()
+        clearAll()
+    end)
+end
+
+-- ================== Sự kiện mở/đóng menu ==================
+CheatButton.MouseButton1Down:Connect(function()
+    MainMenuWindow.Visible = not MainMenuWindow.Visible
+end)
+CloseButton_2.MouseButton1Down:Connect(function()
+    MainMenuWindow.Visible = false
+end)
