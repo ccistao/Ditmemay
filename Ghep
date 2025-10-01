@@ -151,8 +151,35 @@ local function makeButton(btn, text, iconId, index, callback)
     btn.Size = UDim2.new(0, 100, 0, 100)
     btn.Parent = Body_2
 
--- 6 nút menu
+    local icon = Instance.new("ImageLabel", btn)
+    icon.BackgroundTransparency = 1
+    icon.AnchorPoint = Vector2.new(0.5,0.5)
+    icon.Position = UDim2.new(0.5,0,0.45,0)
+    icon.Size = UDim2.new(0.9,0,0.9,0)
+    icon.Image = iconId or ""
 
+    local bottom = Instance.new("TextLabel", btn)  
+    bottom.BackgroundTransparency = 1  
+    bottom.Position = UDim2.new(0, 0, 0.8, 0)  
+    bottom.Size = UDim2.new(1, 0, 0.2, 0)  
+    bottom.Text = text  
+    bottom.Font = Enum.Font.GothamBold  
+    bottom.TextColor3 = Color3.new(1,1,1)  
+    bottom.TextScaled = true  
+
+    activeStates[index] = false
+    btn.MouseButton1Down:Connect(function()
+        activeStates[index] = not activeStates[index]
+        if activeStates[index] then
+            btn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(63, 63, 63)
+        end
+        if callback then callback(activeStates[index]) end
+    end)
+end   -- ✅ đóng hàm ở đây
+
+-- 6 nút menu
 makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
     if state then
         print("Wallhop view bật")
@@ -319,9 +346,8 @@ end
 
 local function stopBeastTracker()
     disconnectBeastTracker()
-    local PlayerGui = plr:WaitForChild("PlayerGui")
-    local gui = PlayerGui:FindFirstChild("BeastCooldownUI")
-    if gui then gui.Enabled = false end -- ẩn chứ không xoá
+    local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+    if gui then gui.Enabled = false end  -- chỉ ẩn, không xoá
     setBeastTrackerVisible(false)
     beastTrackerRunning = false
 end
@@ -337,7 +363,7 @@ local function startBeastTracker()
 
     local PlayerGui = plr:WaitForChild("PlayerGui")
 
-    -- Cave check (chỉ giữ 1 lần)
+    -- Cave check
     local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
     local function isOutsideCave(p)
         if not p then return false end
@@ -439,10 +465,14 @@ local function startBeastTracker()
         showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
         task.delay(2, function()
             for i=30,1,-1 do
-                if labelCooldown then labelCooldown.Text = "Runner CD: "..i.."s" end
+                local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+                local lbl = gui and gui:FindFirstChild("CooldownLabel", true)
+                if lbl then lbl.Text = "Runner CD: "..i.."s" end
                 task.wait(1)
             end
-            if labelCooldown then labelCooldown.Text = "Ready!" end
+            local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+            local lbl = gui and gui:FindFirstChild("CooldownLabel", true)
+            if lbl then lbl.Text = "Ready!" end
             runnerCD = false
         end)
     end
@@ -454,13 +484,44 @@ local function startBeastTracker()
         showBanner("Beast đã dùng Q (Stalker) !!!", "StalkerUsedBanner")
         task.delay(7, function()
             for i=20,1,-1 do
-                if labelCooldown then labelCooldown.Text = "Stalker CD: "..i.."s" end
+                local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+                local lbl = gui and gui:FindFirstChild("CooldownLabel", true)
+                if lbl then lbl.Text = "Stalker CD: "..i.."s" end
                 task.wait(1)
             end
-            if labelCooldown then labelCooldown.Text = "Ready!" end
+            local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+            local lbl = gui and gui:FindFirstChild("CooldownLabel", true)
+            if lbl then lbl.Text = "Ready!" end
             stalkerCD = false
         end)
     end
+
+    -- Hook skill
+    task.spawn(function()
+        while beastTrackerRunning do
+            if beast and beast.Character then
+                local hrp = beast.Character:FindFirstChild("HumanoidRootPart")
+                if skill == "Runner" and hrp and hrp.AssemblyLinearVelocity.Magnitude > 70 and isOutsideCave(hrp.Position) then
+                    onRunnerUsed()
+                end
+                if skill == "Stalker" and not beast.Character:FindFirstChild("Light") then
+                    onStalkerUsed()
+                end
+            end
+            task.wait(0.2)
+        end
+    end)
+end
+
+-- Nút bật/tắt
+makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
+    if state then
+        startBeastTracker()
+        setBeastTrackerVisible(true)
+    else
+        stopBeastTracker()
+    end
+end)
 
     -- Hook vào skill Beast
     task.spawn(function()
