@@ -496,32 +496,6 @@ makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
     end
 end)
 
-    -- Hook vào skill Beast
-    task.spawn(function()
-        while beastTrackerRunning do
-            if beast and beast.Character then
-                local hrp = beast.Character:FindFirstChild("HumanoidRootPart")
-                if skill == "Runner" and hrp and hrp.AssemblyLinearVelocity.Magnitude > 70 and isOutsideCave(hrp.Position) then
-                    onRunnerUsed()
-                end
-                if skill == "Stalker" and not beast.Character:FindFirstChild("Light") then
-                    onStalkerUsed()
-                end
-            end
-            task.wait(0.2)
-        end
-    end)
-end
-
--- Nút bật/tắt
-makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
-    if state then
-        startBeastTracker()
-        setBeastTrackerVisible(true)
-    else
-        stopBeastTracker()
-    end
-end)
 -- ===== PC Progress =====
 local pcProgressRunning = false
 local pcConnections = {}
