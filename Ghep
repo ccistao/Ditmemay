@@ -137,6 +137,13 @@ UIGridLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
 UIGridLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
 UIGridLayout_2.CellSize = UDim2.new(0, 132, 0, 132)
 
+local Button1 = Instance.new("ImageButton")
+local Button2 = Instance.new("ImageButton")
+local Button3 = Instance.new("ImageButton")
+local Button4 = Instance.new("ImageButton")
+local Button5 = Instance.new("ImageButton")
+local Button6 = Instance.new("ImageButton")
+
 --// Toggle system
 local activeStates = {}
 local function makeButton(btn, text, iconId, index, callback)
