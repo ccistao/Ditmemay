@@ -217,7 +217,7 @@ local function ensureCooldownUI()
         label.TextColor3 = Color3.new(1,1,1)
         label.Font = Enum.Font.SourceSansBold
         label.TextScaled = true
-        label.Text = "Finding new beast..."
+        label.Text = "Finding beast..."
 
         -- Dragging
         local dragging, dragStart, startPos
@@ -242,7 +242,21 @@ local function ensureCooldownUI()
         label.InputEnded:Connect(stopDrag)
         table.insert(beastConnections, UIS.InputChanged:Connect(updateDrag))
     end
-    return gui:FindFirstChild("CooldownLabel")
+
+    -- 🔄 Loop update "Finding beast..."
+    task.spawn(function()
+        local dots = 0
+        while beastTrackerRunning and not foundBeast do
+            local lbl = gui:FindFirstChild("CooldownLabel", true)
+            if lbl then
+                dots = (dots % 3) + 1
+                lbl.Text = "Finding beast" .. string.rep(".", dots)
+            end
+            task.wait(0.5)
+        end
+    end)
+
+    return gui:FindFirstChild("CooldownLabel", true)
 end
 
 local function disconnectBeastTracker()
@@ -359,14 +373,25 @@ local function startBeastTracker()
         while beastTrackerRunning do
             beast = detectBeast()
             if beast and not foundBeast then
-                foundBeast = true
-                showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
+    foundBeast = true
+    showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
+
+    local IsGameActive = Replicated:WaitForChild("IsGameActive")
+    if IsGameActive.Value then
+        -- game đang chạy → check skill ngay
+        skill = detectSkill(beast)
+        showBanner("Beast chọn "..skill, "SkillChosenBanner")
+    else
+        -- game chưa chạy → tạm để Unknown, đợi IsGameActive đổi thành true
+        skill = "Unknown"
+        IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
+            if IsGameActive.Value and skill == "Unknown" and foundBeast and beast then
                 skill = detectSkill(beast)
                 showBanner("Beast chọn "..skill, "SkillChosenBanner")
             end
-            task.wait(1)
-        end
-    end)
+        end)
+    end
+end
 
     -- Hàm tiện ích lấy label cooldown
 local function getCooldownLabel()
