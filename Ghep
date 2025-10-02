@@ -223,180 +223,182 @@ local function startBeastTracker()
     beastTrackerRunning = true
     labelCooldown = ensureCooldownUI()
     setBeastTrackerVisible(true)
+
     local beast, foundBeast, skill = nil, false, "Unknown"
-local cooldownStart, usedRunner, stalkerActive = nil, false, false
+    local cooldownStart, usedRunner, stalkerActive = nil, false, false
 
--- Dots animation
-local runningDots = false
-task.spawn(function()
-    if runningDots then return end -- đã chạy rồi thì không chạy thêm
-    runningDots = true
-    local dots = 0
-    while task.wait(0.5) do
-        if not foundBeast and labelCooldown and labelCooldown.Parent then
-            dots = (dots % 3) + 1
-            labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
-        end
-    end
-end)
--- Detect skill khi game bắt đầu
-local function detectSkillWhenGameActive()
+    -- Dots animation
+    local runningDots = false
     task.spawn(function()
-        local gameActive = Replicated:WaitForChild("IsGameActive")
-        -- chờ tới khi game thực sự bắt đầu
-        if gameActive:IsA("BoolValue") then
-            repeat task.wait(0.5) until gameActive.Value == true
-        end
-
-        -- đảm bảo Beast vẫn tồn tại
-        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-
-        local power
-        repeat
-            power = Replicated:FindFirstChild("CurrentPower")
-            task.wait(0.5)
-        until power and power:IsA("StringValue")
-
-        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-
-        skill = tostring(power.Value):lower()
-        showBanner("Beast chose " .. skill, "SkillChosenBanner")
-
-        power:GetPropertyChangedSignal("Value"):Connect(function()
-            if foundBeast and beast and Players:FindFirstChild(beast.Name) then
-                skill = tostring(power.Value):lower()
+        if runningDots then return end -- đã chạy rồi thì không chạy thêm
+        runningDots = true
+        local dots = 0
+        while task.wait(0.5) do
+            if not foundBeast and labelCooldown and labelCooldown.Parent then
+                dots = (dots % 3) + 1
+                labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
             end
-        end)
+        end
     end)
-end
 
--- Scan Beast
-local function isBeast(player)
-    if not player then return false end
-    local s = player:FindFirstChild("TempPlayerStatsModule")
-    return s and s:FindFirstChild("IsBeast") and s.IsBeast.Value
-end
+    -- Detect skill khi game bắt đầu
+    local function detectSkillWhenGameActive()
+        task.spawn(function()
+            local gameActive = Replicated:WaitForChild("IsGameActive")
+            -- chờ tới khi game thực sự bắt đầu
+            if gameActive:IsA("BoolValue") then
+                repeat task.wait(0.5) until gameActive.Value == true
+            end
 
-local runningScan = false
-task.spawn(function()
-    if runningScan then return end
-    runningScan = true
-    while task.wait(0.05) do
-        if foundBeast then
-            if not beast or not Players:FindFirstChild(beast.Name) or not isBeast(beast) then
-                beast, foundBeast, skill = nil, false, "Unknown"
-                cooldownStart, usedRunner, stalkerActive = nil, false, false
-                if labelCooldown then labelCooldown.Text = "Finding new beast..." end
+            -- đảm bảo Beast vẫn tồn tại
+            if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+
+            local power
+            repeat
+                power = Replicated:FindFirstChild("CurrentPower")
+                task.wait(0.5)
+            until power and power:IsA("StringValue")
+
+            if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+
+            skill = tostring(power.Value):lower()
+            showBanner("Beast chose " .. skill, "SkillChosenBanner")
+
+            power:GetPropertyChangedSignal("Value"):Connect(function()
+                if foundBeast and beast and Players:FindFirstChild(beast.Name) then
+                    skill = tostring(power.Value):lower()
+                end
+            end)
+        end)
+    end
+
+    -- Scan Beast
+    local function isBeast(player)
+        if not player then return false end
+        local s = player:FindFirstChild("TempPlayerStatsModule")
+        return s and s:FindFirstChild("IsBeast") and s.IsBeast.Value
+    end
+
+    local runningScan = false
+    task.spawn(function()
+        if runningScan then return end
+        runningScan = true
+        while task.wait(0.05) do
+            if foundBeast then
+                if not beast or not Players:FindFirstChild(beast.Name) or not isBeast(beast) then
+                    beast, foundBeast, skill = nil, false, "Unknown"
+                    cooldownStart, usedRunner, stalkerActive = nil, false, false
+                    if labelCooldown then labelCooldown.Text = "Finding new beast..." end
+                end
+            end
+
+            if not foundBeast then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if isBeast(p) then
+                        beast, foundBeast = p, true
+                        showBanner(beast.Name .. " is Beast!!!", "BeastBanner")
+                        detectSkillWhenGameActive()
+                        if labelCooldown then labelCooldown.Text = "Found beast!!!" end
+                        task.delay(2.5, function()
+                            if foundBeast and labelCooldown then
+                                labelCooldown.Text = "Cooldown: Perk Ready!!!"
+                            end
+                        end)
+                        break
+                    end
+                end
             end
         end
+    end)
 
-        if not foundBeast then
-            for _, p in ipairs(Players:GetPlayers()) do
-                if isBeast(p) then
-                    beast, foundBeast = p, true
-                    showBanner(beast.Name .. " is Beast!!!", "BeastBanner")
-                    detectSkillWhenGameActive()
-                    if labelCooldown then labelCooldown.Text = "Found beast!!!" end
-                    task.delay(2.5, function()
-                        if foundBeast and labelCooldown then
-                            labelCooldown.Text = "Cooldown: Perk Ready!!!"
+    -- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
+    if _G.BeastHeartbeat then
+        _G.BeastHeartbeat:Disconnect()
+    end
+
+    _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
+        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+        if not labelCooldown or not labelCooldown.Parent then return end
+
+        local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
+        local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
+        if not hum then return end
+
+        -- RUNNER
+        if skill == "runner" then
+            if hum.WalkSpeed > 19 and not usedRunner then
+                usedRunner = true
+                showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+
+                task.spawn(function()
+                    local startUse = tick()
+                    repeat
+                        if not foundBeast then return end
+                        if labelCooldown and labelCooldown.Parent then
+                            labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
+                      endnd
+                        RunService.Heartbeat:Wait()
+                    until tick() - startUse >= 3
+
+                    local startCD = tick()
+                    repeat
+                        if not foundBeast then return end
+                        if labelCooldown and labelCooldown.Parent then
+                            labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
                         end
-                    end)
-                    break
+                        RunService.Heartbeat:Wait()
+                    until tick() - startCD >= 22
+
+                    if foundBeast and labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = "Cooldown: Runner Ready!!!"
+                    end
+                    usedRunner = false
+                end)
+            end
+
+        -- STALKER
+        elseif skill == "stalker" then
+            local anyOff = false
+            for _, o in ipairs(beast.Character:GetDescendants()) do
+                if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
+                    if not o.Enabled or (o.Brightness and o.Brightness == 0) then
+                        anyOff = true
+                        break
+                    end
                 end
             end
-        end
-    end
-end)
 
--- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
-if _G.BeastHeartbeat then
-    _G.BeastHeartbeat:Disconnect()
-end
+            if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
+                stalkerActive = true
+                showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
 
-_G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
-    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-    if not labelCooldown or not labelCooldown.Parent then return end
+                task.spawn(function()
+                    local startUse = tick()
+                    repeat
+                        if not foundBeast then return end
+                        if labelCooldown and labelCooldown.Parent then
+                            labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
+                        end
+                        RunService.Heartbeat:Wait()
+                    until tick() - startUse >= 7
 
-    local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
-    local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
-    if not hum then return end
+                    local startCD = tick()
+                    repeat
+                        if not foundBeast then return end
+                        if labelCooldown and labelCooldown.Parent then
+                            labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
+                        end
+                        RunService.Heartbeat:Wait()
+                    until tick() - startCD >= 20
 
-    -- RUNNER
-    if skill == "runner" then
-        if hum.WalkSpeed > 19 and not usedRunner then
-            usedRunner = true
-            showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
-
-            task.spawn(function()
-                local startUse = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
+                    if foundBeast and labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = "Cooldown: Stalker Ready!!!"
                     end
-                    RunService.Heartbeat:Wait()
-                until tick() - startUse >= 3
-
-                local startCD = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startCD >= 22
-
-                if foundBeast and labelCooldown and labelCooldown.Parent then
-                    labelCooldown.Text = "Cooldown: Runner Ready!!!"
-                end
-                usedRunner = false
-            end)
-        end
-
-    -- STALKER
-    elseif skill == "stalker" then
-        local anyOff = false
-        for _, o in ipairs(beast.Character:GetDescendants()) do
-            if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
-                if not o.Enabled or (o.Brightness and o.Brightness == 0) then
-                    anyOff = true
-                    break
-                end
+                    stalkerActive = false
+                end)
             end
         end
-
-        if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
-            stalkerActive = true
-            showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
-
-            task.spawn(function()
-                local startUse = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startUse >= 7
-
-                local startCD = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startCD >= 20
-
-                if foundBeast and labelCooldown and labelCooldown.Parent then
-                    labelCooldown.Text = "Cooldown: Stalker Ready!!!"
-                end
-                stalkerActive = false
-            end)
-        end
-    end
-end)
+    end)
 end
 
 -- Gọi khi tắt
@@ -405,7 +407,6 @@ local function stopBeastTracker()
     setBeastTrackerVisible(false)
     disconnectBeastTracker()
 end
-
 
 -- ===== PC Progress =====
 local pcProgressRunning = false
