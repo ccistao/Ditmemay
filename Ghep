@@ -244,13 +244,6 @@ makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
     end
 end)
 
-local function setBeastTrackerVisible(state)
-    local g = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
-    if g and g:IsA("ScreenGui") then
-        g.Enabled = state
-    end
-end
-
 -- ===== Beast Tracker =====
 local beastTrackerRunning = false
 local beastConnections = {}
