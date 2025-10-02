@@ -266,9 +266,9 @@ local function ensureCooldownUI()
     -- 🔄 Loop update "Finding beast..."
     task.spawn(function()
         local dots = 0
-        while beastTrackerRunning and not foundBeast do
+        while beastTrackerRunning do   -- ✅ sửa chỗ này
             local lbl = gui:FindFirstChild("CooldownLabel", true)
-            if lbl then
+            if lbl and not foundBeast then   -- ✅ check foundBeast ở trong thay vì ở điều kiện while
                 dots = (dots % 3) + 1
                 lbl.Text = "Finding beast" .. string.rep(".", dots)
             end
@@ -278,6 +278,7 @@ local function ensureCooldownUI()
 
     return gui:FindFirstChild("CooldownLabel", true)
 end
+
 
 local function disconnectBeastTracker()
     for _,c in ipairs(beastConnections) do
