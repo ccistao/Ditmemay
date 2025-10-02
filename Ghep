@@ -53,6 +53,11 @@ fade(main,1); fade(sub,1)
 task.wait(1.5)
 pcall(function() guiIntro:Destroy() end)
 
+--// Detect Platform
+local function isMobile()
+    return UIS.TouchEnabled and not UIS.KeyboardEnabled
+end
+
 --// MAIN MENU
 local ver = "v0.3.4"
 local FTFHAX = Instance.new("ScreenGui", plr.PlayerGui)
@@ -88,11 +93,24 @@ TextLabel.TextScaled = true
 TextLabel.TextStrokeTransparency = 0
 TextLabel.TextYAlignment = Enum.TextYAlignment.Bottom
 
+-- Kích thước tùy theo thiết bị
+local menuSize, topBarHeight, closeButtonSize, cellSize, bodyPosition, bodySize
+if isMobile() then
+    -- Mobile: nhỏ hơn
+    menuSize = UDim2.new(0, 420, 0, 320)
+    topBarHeight = 40
+    closeButtonSize = 36
+    cellSize = UDim2.new(0, 132, 0, 132)
+    bodyPosition = UDim2.new(0.5, 0, 0, 45)
+    bodySize = UDim2.new(1, -10, 1, -50)
+end
+
 local MainMenuWindow = Instance.new("Frame", FTFHAX)
 MainMenuWindow.Name = "MainMenuWindow"
 MainMenuWindow.AnchorPoint = Vector2.new(0.5, 0.5)
 MainMenuWindow.BackgroundColor3 = Color3.fromRGB(47, 47, 47)
-MainMenuWindow.BorderSizePixel = 2
+MainMenuWindow.BorderSizePixel = 3
+MainMenuWindow.BorderColor3 =Color3.fromRGB(1, 1, 1)
 MainMenuWindow.Position = UDim2.new(0.5, 0, 0.5, -29)
 MainMenuWindow.Size = UDim2.new(0, 672, 0, 510)
 MainMenuWindow.Visible = false
@@ -100,6 +118,8 @@ MainMenuWindow.Visible = false
 local TopBar_2 = Instance.new("Frame", MainMenuWindow)
 TopBar_2.Name = "TopBar"
 TopBar_2.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
+TopBar_2.BorderSizePixel = 0
+TopBar_2.BorderColor3 =Color3.fromRGB(1, 1, 1)
 TopBar_2.Size = UDim2.new(1, 0, 0, 65)
 
 local CloseButton_2 = Instance.new("TextButton", TopBar_2)
