@@ -370,29 +370,30 @@ local function startBeastTracker()
     end
 
     task.spawn(function()
-        while beastTrackerRunning do
-            beast = detectBeast()
-            if beast and not foundBeast then
-    foundBeast = true
-    showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
+    while beastTrackerRunning do
+        beast = detectBeast()
+        if beast and not foundBeast then
+            foundBeast = true
+            showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
 
-    local IsGameActive = Replicated:WaitForChild("IsGameActive")
-    if IsGameActive.Value then
-        -- game đang chạy → check skill ngay
-        skill = detectSkill(beast)
-        showBanner("Beast chọn "..skill, "SkillChosenBanner")
-    else
-        -- game chưa chạy → tạm để Unknown, đợi IsGameActive đổi thành true
-        skill = "Unknown"
-        IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
-            if IsGameActive.Value and skill == "Unknown" and foundBeast and beast then
+            local IsGameActive = Replicated:WaitForChild("IsGameActive")
+            if IsGameActive.Value then
                 skill = detectSkill(beast)
                 showBanner("Beast chọn "..skill, "SkillChosenBanner")
+            else        
+                skill = "Unknown"
+                IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
+                    if IsGameActive.Value and skill == "Unknown" and foundBeast and beast then
+                        skill = detectSkill(beast)
+                        showBanner("Beast chọn "..skill, "SkillChosenBanner")
+                    end
+                end)
             end
-        end)
-    end
-end
-
+        end  
+        task.wait(1)
+    end      
+end)         
+    
     -- Hàm tiện ích lấy label cooldown
 local function getCooldownLabel()
     local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
