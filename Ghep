@@ -212,6 +212,14 @@ local function setBeastTrackerVisible(state)
     end
 end
 
+local beastTrackerRunning = false
+local beastConnections = {}
+local function ensureCooldownUI()
+local function showBanner()
+local function isOutsideCave()
+local function disconnectBeastTracker()
+
+
 -- ===== Beast Tracker (logic cũ) =====
 local beast, foundBeast, skill = nil, false, "Unknown"
 local cooldownStart, usedRunner, stalkerActive = nil, false, false
@@ -710,69 +718,3 @@ local function startPCProgress()
         end))
     end
 end
-
--- ===== Sự kiện mở/đóng menu =====
-CheatButton.MouseButton1Down:Connect(function()
-    MainMenuWindow.Visible = not MainMenuWindow.Visible
-end)
-CloseButton_2.MouseButton1Down:Connect(function()
-    MainMenuWindow.Visible = false
-end)
-
--- 6 nút menu
-makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
-    if state then
-        print("Wallhop view bật")
-        -- chèn script Wallhop của bạn vào đây
-    else
-        print("Wallhop view tắt")
-        -- code tắt wallhop
-    end
-end)
-
-makeButton(Button2,"Flashlight","rbxassetid://106585954087372",2,function(state)
-    if state then
-        print("Flashlight bật")
-        -- chèn script Flashlight vào đây
-    else
-        print("Flashlight tắt")
-        -- code tắt flashlight
-    end
-end)
-
-makeButton(Button3,"Self muting","rbxassetid://90332761263250",3,function(state)
-    if state then
-        print("Self muting bật")
-        -- chèn script Self muting vào đây
-    else
-        print("Self muting tắt")
-        -- code tắt self muting
-    end
-end)
-
-makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
-    if state then
-        startBeastTracker()
-        setBeastTrackerVisible(true)
-    else
-        stopBeastTracker()
-    end
-end)
-
-makeButton(Button5,"Survivor tracker","rbxassetid://90682070728446",5,function(state)
-    if state then
-        print("Survivor tracker bật")
-        -- chèn script Survivor tracker vào đây
-    else
-        print("Survivor tracker tắt")
-        -- code tắt survivor tracker
-    end
-end)
-
-makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
-    if state then
-        startPCProgress()
-    else
-        stopPCProgress()
-    end
-end)
