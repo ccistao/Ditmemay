@@ -235,63 +235,85 @@ local function ensureCooldownUI()
     return label
 end
 
+-- Hàm tạo viền rainbow
+local function createRainbowBorder(frame)
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 127, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(75, 0, 130)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(148, 0, 211)),
+    })
+    gradient.Parent = frame
+
+    local conn
+    conn = RunService.RenderStepped:Connect(function()
+        if gradient and gradient.Parent then
+            gradient.Rotation = (gradient.Rotation + 2) % 360
+        else
+            conn:Disconnect()
+        end
+    end)
+end
+
+-- Hàm hiển thị banner với rainbow border
 local function showBanner(text, name)
-    -- Xóa banner cũ nếu có
     local existing = plr.PlayerGui:FindFirstChild(name)
     if existing then 
         pcall(function() existing:Destroy() end)
-        task.wait(0.1)
     end
     
     local gui = Instance.new("ScreenGui")
     gui.Name = name
     gui.Parent = plr.PlayerGui
     gui.ResetOnSpawn = false
-    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local label = Instance.new("TextLabel")
+    label.Parent = gui
+    label.Size = UDim2.new(0, 350, 0, 60)
+    label.Position = UDim2.new(1, 10, 0, 10)  -- Bắt đầu ngoài màn hình bên phải
+    label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.Font = Enum.Font.GothamBold
+    label.TextScaled = true
+    label.Text = text
+    label.BorderSizePixel = 3
+    label.BorderColor3 = Color3.new(1, 1, 1)
+
+    -- Thêm padding cho text
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 10)
+    padding.PaddingRight = UDim.new(0, 10)
+    padding.PaddingTop = UDim.new(0, 5)
+    padding.PaddingBottom = UDim.new(0, 5)
+    padding.Parent = label
+
+    -- Tạo rainbow border
+    createRainbowBorder(label)
+
+    -- Animation trượt vào
+    local tweenIn = TweenService:Create(label, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), 
+        {Position = UDim2.new(1, -360, 0, 10)}
+    )
     
-    local frame = Instance.new("Frame")
-    frame.Parent = gui
-    frame.Size = UDim2.new(0, 500, 0, 100)
-    frame.Position = UDim2.new(0.5, -250, 0.25, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    frame.BorderSizePixel = 0
-    frame.ZIndex = 10
+    -- Animation trượt ra
+    local tweenOut = TweenService:Create(label, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), 
+        {Position = UDim2.new(1, 10, 0, 10)}
+    )
+
+    tweenIn:Play()
+    tweenIn.Completed:Wait()
     
-    -- Bo tròn viền
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 15)
-    corner.Parent = frame
-    
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Parent = frame
-    textLabel.Size = UDim2.new(1, -20, 1, -20)
-    textLabel.Position = UDim2.new(0, 10, 0, 10)
-    textLabel.BackgroundTransparency = 1
-    textLabel.Text = text
-    textLabel.TextColor3 = Color3.new(1, 1, 1)
-    textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextStrokeTransparency = 0
-    textLabel.ZIndex = 11
-    
-    -- Hiệu ứng fade in
-    frame.BackgroundTransparency = 1
-    textLabel.TextTransparency = 1
-    
-    TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
-    TweenService:Create(textLabel, TweenInfo.new(0.3), {TextTransparency = 0, TextStrokeTransparency = 0.5}):Play()
-    
-    -- Tự động xóa sau 4 giây
-    task.delay(4, function()
-        if gui and gui.Parent then
-            TweenService:Create(frame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-            TweenService:Create(textLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-            task.wait(0.6)
-            pcall(function() gui:Destroy() end)
-        end
+    task.delay(3.4, function()
+        tweenOut:Play()
+        tweenOut.Completed:Wait()
+        pcall(function() gui:Destroy() end)
     end)
     
-    print("[DEBUG] Banner created:", text)  -- Debug để biết banner có tạo không
+    print("[DEBUG] Rainbow banner created:", text)
 end
 
 -- Cave check
