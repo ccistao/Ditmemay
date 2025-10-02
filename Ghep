@@ -1,4 +1,4 @@
-bleble--// Services
+--// Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -296,6 +296,8 @@ local function stopBeastTracker()
     beastTrackerRunning = false
 end
 
+local beast, foundBeast, skill = nil, false, "Unknown" -- đưa ra ngoài để không reset sai
+
 local function startBeastTracker()
     if beastTrackerRunning then return end
     beastTrackerRunning = true
@@ -306,15 +308,6 @@ local function startBeastTracker()
     end
 
     local PlayerGui = plr:WaitForChild("PlayerGui")
-
-    -- Cave check
-    local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
-    local function isOutsideCave(p)
-        if not p then return false end
-        return p.X < caveMin.X or p.X > caveMax.X or
-               p.Y < caveMin.Y or p.Y > caveMax.Y or
-               p.Z < caveMin.Z or p.Z > caveMax.Z
-    end
 
     -- Rainbow border
     local function createRainbowBorder(frame)
@@ -367,10 +360,7 @@ local function startBeastTracker()
         end)
     end
 
-    -- ==== CORE LOGIC detect Beast, skill, cooldown ====
-    local beast, foundBeast, skill = nil, false, "Unknown"
-    local runnerCD, stalkerCD = false, false
-
+    -- Detect Beast / Skill
     local function detectBeast()
         for _, p in ipairs(Players:GetPlayers()) do
             local stats = p:FindFirstChild("TempPlayerStatsModule") or p:FindFirstChild("PlayerStats")
@@ -384,36 +374,55 @@ local function startBeastTracker()
     local function detectSkill(b)
         if not b then return "Unknown" end
         local stats = b:FindFirstChild("TempPlayerStatsModule") or b:FindFirstChild("PlayerStats")
-        if not stats then return "Unknown" end
+        if not statsenden return "Unknown" end
         local chosen = stats:FindFirstChild("SkillChosen")
         return chosen and chosen.Value or "Unknown"
     end
 
+    -- Loop update "Finding beast..."
+    task.spawn(function()
+        local dots = 0
+        while beastTrackerRunning do
+            if labelCooldown and not foundBeast then
+                dots = (dots % 3) + 1
+                labelCooldown.Text = "Finding beast" .. string.rep(".", dots)
+            end
+            task.wait(0.5)
+        end
+    end)
+
+    -- Loop detect Beast & Skill
     task.spawn(function()
         while beastTrackerRunning do
-            beast = detectBeast()
-            if beast and not foundBeast then
-                foundBeast = true
+            local b = detectBeast()
+            if b and not foundBeast then
+                beast, foundBeast = b, true
                 showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
 
                 local IsGameActive = Replicated:WaitForChild("IsGameActive")
                 if IsGameActive.Value then
                     skill = detectSkill(beast)
-                    showBanner("Beast chọn "..skill, "SkillChosenBanner")
-                else        
+                    if skill ~= "Unknown" then
+                        showBanner("Beast chọn "..skill, "SkillChosenBanner")
+                    end
+                else
                     skill = "Unknown"
+                    -- chờ khi game bắt đầu thì thử lại
                     IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
                         if IsGameActive.Value and skill == "Unknown" and foundBeast and beast then
-                            skill = detectSkill(beast)
-                            showBanner("Beast chọn "..skill, "SkillChosenBanner")
+                            local s = detectSkill(beast)
+                            if s ~= "Unknown" then
+                                skill = s
+                                showBanner("Beast chọn "..s, "SkillChosenBanner")
+                            end
                         end
                     end)
                 end
-            end  
+            end
             task.wait(1)
-        end      
-    end)  
-end      
+        end
+    end)
+end
 
 -- ===== PC Progress =====
 local pcProgressRunning = false
