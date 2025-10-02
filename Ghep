@@ -94,13 +94,13 @@ TextLabel.TextStrokeTransparency = 0
 TextLabel.TextYAlignment = Enum.TextYAlignment.Bottom
 
 -- Kích thước tùy theo thiết bị
-local menuSize, topBarHeight, closeButtonSize, cellSize, bodyPosition, bodySize
+local MainMenuWindow, TopBar_2, CloseButton_2, UIGridLayout_2, Body_2
 if isMobile() then
     -- Mobile: nhỏ hơn
-    MainMenuWindow.Position = UDim2.new(0, 420, 0, 320)
+    MainMenuWindow.Size = UDim2.new(0, 420, 0, 320)
     TopBar_2.Size = UDim2.new(1, 0, 0, 40)
     CloseButton_2.Size = UDim2.new(0, 57, 0, 57)
-    UIGridLayout_2.CellSize = UDim2.new0, 132, 0, 132)
+    UIGridLayout_2.CellSize = UDim2.new(0, 132, 0, 132)
     Body_2.Position = UDim2.new(0.5, 0, 0, 45)
     Body_2.Size = UDim2.new(1, -10, 1, -50)
 end
