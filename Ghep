@@ -701,4 +701,107 @@ local function startPCProgress()
     local function applyScreenState(pc, c)
         local pack = createBillboard(pc)
         if not pack then return end
-        if c.G > c.R + 0.2 and c
+        if c.G > c.R + 0.2 and c.G > c.B + 0.2 then
+            pcState[pc] = "DONE"
+            pack.label.Text = "DONE"
+            pack.label.TextColor3 = Color3.new(0,1,0)
+        elseif c.R > c.G + 0.2 and c.R > c.B + 0.2 then
+            pcState[pc] = "ERROR"
+            pack.label.Text = "ERROR"
+            pack.label.TextColor3 = Color3.new(1,0,0)
+        else
+            if not finished[pc] then
+                pcState[pc] = nil
+            end
+        end
+    end
+    local function watchPC(pc)
+        if hookedPCs[pc] then return end
+        hookedPCs[pc] = true
+        local scr = pc:FindFirstChild("Screen")
+        if scr and scr:IsA("BasePart") then
+            applyScreenState(pc, scr.Color)
+            table.insert(pcConnections, scr:GetPropertyChangedSignal("Color"):Connect(function()
+                applyScreenState(pc, scr.Color)
+            end))
+        end
+    end
+
+    table.insert(pcConnections, task.spawn(function()
+        while pcProgressRunning do
+            local map = RS:FindFirstChild("CurrentMap") and RS.CurrentMap.Value
+            if map then
+                for _,d in ipairs(map:GetDescendants()) do
+                    if d.Name == "ComputerTable" then
+                        createBillboard(d)
+                        watchPC(d)
+                    end
+                end
+            end
+            task.wait(1)
+        end
+    end))
+
+    if RS:FindFirstChild("CurrentMap") then
+        table.insert(pcConnections, RS.CurrentMap.Changed:Connect(function()
+            clearAll()
+        end))
+    end
+end
+-- ===== SỰ KIỆN MỞ/ĐÓNG MENU =====
+CheatButton.MouseButton1Down:Connect(function()
+    MainMenuWindow.Visible = not MainMenuWindow.Visible
+end)
+
+CloseButton_2.MouseButton1Down:Connect(function()
+    MainMenuWindow.Visible = false
+end)
+
+-- ===== 6 NÚT MENU =====
+makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
+    if state then
+        print("Wallhop view bật")
+    else
+        print("Wallhop view tắt")
+    end
+end)
+
+makeButton(Button2,"Flashlight","rbxassetid://106585954087372",2,function(state)
+    if state then
+        print("Flashlight bật")
+    else
+        print("Flashlight tắt")
+    end
+end)
+
+makeButton(Button3,"Self muting","rbxassetid://90332761263250",3,function(state)
+    if state then
+        print("Self muting bật")
+    else
+        print("Self muting tắt")
+    end
+end)
+
+makeButton(Button4,"Beast tracker","rbxassetid://9125495609",4,function(state)
+    if state then
+        startBeastTracker()
+    else
+        stopBeastTracker()
+    end
+end)
+
+makeButton(Button5,"Survivor tracker","rbxassetid://90682070728446",5,function(state)
+    if state then
+        print("Survivor tracker bật")
+    else
+        print("Survivor tracker tắt")
+    end
+end)
+
+makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
+    if state then
+        startPCProgress()
+    else
+        stopPCProgress()
+    end
+end)
