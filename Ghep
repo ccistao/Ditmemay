@@ -370,92 +370,30 @@ local function startBeastTracker()
     end
 
     task.spawn(function()
-    while beastTrackerRunning do
-        beast = detectBeast()
-        if beast and not foundBeast then
-            foundBeast = true
-            showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
-
-            local IsGameActive = Replicated:WaitForChild("IsGameActive")
-            if IsGameActive.Value then
-                skill = detectSkill(beast)
-                showBanner("Beast chọn "..skill, "SkillChosenBanner")
-            else        
-                skill = "Unknown"
-                IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
-                    if IsGameActive.Value and skill == "Unknown" and foundBeast and beast then
-                        skill = detectSkill(beast)
-                        showBanner("Beast chọn "..skill, "SkillChosenBanner")
-                    end
-                end)
-            end
-        end  
-        task.wait(1)
-    end      
-end)         
-    
-    -- Hàm tiện ích lấy label cooldown
-local function getCooldownLabel()
-    local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
-    if gui then
-        local frame = gui:FindFirstChild("Frame")
-        if frame then
-            return frame:FindFirstChild("CooldownLabel")
-        end
-    end
-    return nil
-end
-
--- Runner cooldown
-local function onRunnerUsed()
-    if runnerCD then return end
-    runnerCD = true
-    showBanner("Beast đã dùng Q (Runner) !!!", "RunnerUsedBanner")
-    task.delay(2, function()
-        for i = 30, 1, -1 do
-            local lbl = getCooldownLabel()
-            if lbl then lbl.Text = "Runner CD: " .. i .. "s" end
-            task.wait(1)
-        end
-        local lbl = getCooldownLabel()
-        if lbl then lbl.Text = "Ready!" end
-        runnerCD = false
-    end)
-end
-
--- Stalker cooldown
-local function onStalkerUsed()
-    if stalkerCD then return end
-    stalkerCD = true
-    showBanner("Beast đã dùng Q (Stalker) !!!", "StalkerUsedBanner")
-    task.delay(7, function()
-        for i = 20, 1, -1 do
-            local lbl = getCooldownLabel()
-            if lbl then lbl.Text = "Stalker CD: " .. i .. "s" end
-            task.wait(1)
-        end
-        local lbl = getCooldownLabel()
-        if lbl then lbl.Text = "Ready!" end
-        stalkerCD = false
-    end)
-end
-
-    -- Hook skill
-    task.spawn(function()
         while beastTrackerRunning do
-            if beast and beast.Character then
-                local hrp = beast.Character:FindFirstChild("HumanoidRootPart")
-                if skill == "Runner" and hrp and hrp.AssemblyLinearVelocity.Magnitude > 70 and isOutsideCave(hrp.Position) then
-                    onRunnerUsed()
+            beast = detectBeast()
+            if beast and not foundBeast then
+                foundBeast = true
+                showBanner("Đã tìm thấy Beast !!!", "BeastBanner")
+
+                local IsGameActive = Replicated:WaitForChild("IsGameActive")
+                if IsGameActive.Value then
+                    skill = detectSkill(beast)
+                    showBanner("Beast chọn "..skill, "SkillChosenBanner")
+                else        
+                    skill = "Unknown"
+                    IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
+                        if IsGameActive.Value and skill == "Unknown" and foundBeast and beast then
+                            skill = detectSkill(beast)
+                            showBanner("Beast chọn "..skill, "SkillChosenBanner")
+                        end
+                    end)
                 end
-                if skill == "Stalker" and not beast.Character:FindFirstChild("Light") then
-                    onStalkerUsed()
-                end
-            end
-            task.wait(0.2)
-        end
-    end)
-end
+            end  
+            task.wait(1)
+        end      
+    end)  
+end      
 
 -- ===== PC Progress =====
 local pcProgressRunning = false
