@@ -259,8 +259,11 @@ local function showBanner(text, name)
     end)
 end
 
-local function isOutsideCave(position)
-    return position.Y > -20
+-- Cave check
+local caveMin, caveMax = Vector3.new(-275,-10,-275), Vector3.new(-179,45,-179)
+local function isOutsideCave(p)
+    if not p then return false end
+    return p.X < caveMin.X or p.X > caveMax.X or p.Y < caveMin.Y or p.Y > caveMax.Y or p.Z < caveMin.Z or p.Z > caveMax.Z
 end
 
 local function disconnectBeastTracker()
