@@ -397,7 +397,7 @@ local function startBeastTracker()
         while beastTrackerRunning do
             if labelCooldown and not foundBeast then
                 dots = (dots % 3) + 1
-                labelCooldown.Text = "Finding beast" .. string.rep(".", dots)
+                labelCooldown.Text = "Finding new beast" .. string.rep(".", dots)
             end
             task.wait(0.5)
         end
