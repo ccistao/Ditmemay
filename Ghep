@@ -230,33 +230,62 @@ local function ensureCooldownUI()
 end
 
 local function showBanner(text, name)
+    -- Xóa banner cũ nếu có
     local existing = plr.PlayerGui:FindFirstChild(name)
-    if existing then existing:Destroy() end
+    if existing then 
+        pcall(function() existing:Destroy() end)
+        task.wait(0.1)
+    end
     
     local gui = Instance.new("ScreenGui")
     gui.Name = name
     gui.Parent = plr.PlayerGui
     gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     local frame = Instance.new("Frame")
     frame.Parent = gui
-    frame.Size = UDim2.new(0, 400, 0, 80)
-    frame.Position = UDim2.new(0.5, -200, 0.3, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    frame.Size = UDim2.new(0, 500, 0, 100)
+    frame.Position = UDim2.new(0.5, -250, 0.25, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
     frame.BorderSizePixel = 0
+    frame.ZIndex = 10
+    
+    -- Bo tròn viền
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 15)
+    corner.Parent = frame
     
     local textLabel = Instance.new("TextLabel")
     textLabel.Parent = frame
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.Size = UDim2.new(1, -20, 1, -20)
+    textLabel.Position = UDim2.new(0, 10, 0, 10)
     textLabel.BackgroundTransparency = 1
     textLabel.Text = text
     textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.TextScaled = true
     textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextStrokeTransparency = 0
+    textLabel.ZIndex = 11
     
-    task.delay(3, function()
-        if gui and gui.Parent then gui:Destroy() end
+    -- Hiệu ứng fade in
+    frame.BackgroundTransparency = 1
+    textLabel.TextTransparency = 1
+    
+    TweenService:Create(frame, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(textLabel, TweenInfo.new(0.3), {TextTransparency = 0, TextStrokeTransparency = 0.5}):Play()
+    
+    -- Tự động xóa sau 4 giây
+    task.delay(4, function()
+        if gui and gui.Parent then
+            TweenService:Create(frame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+            TweenService:Create(textLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            task.wait(0.6)
+            pcall(function() gui:Destroy() end)
+        end
     end)
+    
+    print("[DEBUG] Banner created:", text)  -- Debug để biết banner có tạo không
 end
 
 -- Cave check
@@ -560,35 +589,31 @@ local function startPCProgress()
     end
 
     local function isVisible(part)
-        if not part then return false end
-        local camPos = Camera.CFrame.Position
-        local partPos = part.Position + CHECK_OFFSET
-        local dir = (partPos - camPos).Unit * (partPos - camPos).Magnitude
-        local params = RaycastParams.new()
-        params.FilterDescendantsInstances = {LocalPlayer.Character, unpack(Players:GetPlayers())}
-        params.FilterType = Enum.RaycastFilterType.Blacklist
-        local result = workspace:Raycast(camPos, dir, params)
-        if not result then return true end
-        if result.Instance:IsDescendantOf(part.Parent) then
-            return true
-        end
-        for _, offset in ipairs({
-            Vector3.new(CHECK_RADIUS, 0, 0),
-            Vector3.new(-CHECK_RADIUS, 0, 0),
-            Vector3.new(0, CHECK_RADIUS, 0),
-            Vector3.new(0, -CHECK_RADIUS, 0),
-            Vector3.new(0, 0, CHECK_RADIUS),
-            Vector3.new(0, 0, -CHECK_RADIUS)
-        }) do
-            local p = partPos + offset
-            local dir2 = (p - camPos).Unit * (p - camPos).Magnitude
-            local r = workspace:Raycast(camPos, dir2, params)
-            if not r or r.Instance:IsDescendantOf(part.Parent) then
-                return true
-            end
-        end
-        return false
+    if not part then return false end
+    local camPos = Camera.CFrame.Position
+    local partPos = part.Position + CHECK_OFFSET
+    local distance = (partPos - camPos).Magnitude
+    local dir = (partPos - camPos).Unit * distance
+    
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {LocalPlayer.Character}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+    
+    local result = workspace:Raycast(camPos, dir, params)
+    
+    -- Nếu không có gì chặn
+    if not result then 
+        return true
     end
+    
+    -- Nếu raycast trúng chính PC hoặc các part thuộc PC
+    if result.Instance:IsDescendantOf(part.Parent) then
+        return true
+    end
+    
+    -- Nếu trúng tường hoặc vật khác -> ẨN
+    return false
+end
 
     local function queueProgress(pc, value)
         if finished[pc] then return end
@@ -755,6 +780,50 @@ end)
 
 CloseButton_2.MouseButton1Down:Connect(function()
     MainMenuWindow.Visible = false
+end)
+
+-- ===== THÊM SAU KHI TẠO MainMenuWindow =====
+
+-- Hệ thống Drag UI
+local dragging
+local dragInput
+local dragStart
+local startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    MainMenuWindow.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+TopBar_2.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainMenuWindow.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TopBar_2.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        update(input)
+    end
 end)
 
 -- ===== 6 NÚT MENU =====
