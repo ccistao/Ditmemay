@@ -298,6 +298,18 @@ end
 
 local beast, foundBeast, skill = nil, false, "Unknown" -- đưa ra ngoài để không reset sai
 
+-- Hàm reset khi qua round mới
+local function resetBeastTracker()
+    beast = nil
+    foundBeast = false
+    skill = "Unknown"
+
+    local gui = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+    if gui and gui:FindFirstChild("CooldownLabel", true) then
+        gui.CooldownLabel.Text = "Finding beast..."
+    end
+end
+
 local function startBeastTracker()
     if beastTrackerRunning then return end
     beastTrackerRunning = true
@@ -421,6 +433,21 @@ local function startBeastTracker()
             end
             task.wait(1)
         end
+    end)
+end
+
+-- Reset khi game kết thúc
+local IsGameActive = Replicated:WaitForChild("IsGameActive")
+IsGameActive:GetPropertyChangedSignal("Value"):Connect(function()
+    if not IsGameActive.Value then
+        resetBeastTracker()
+    end
+end)
+
+-- Reset khi map đổi
+if Replicated:FindFirstChild("CurrentMap") then
+    Replicated.CurrentMap.Changed:Connect(function()
+        resetBeastTracker()
     end)
 end
 
