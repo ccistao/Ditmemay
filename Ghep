@@ -97,12 +97,12 @@ TextLabel.TextYAlignment = Enum.TextYAlignment.Bottom
 local menuSize, topBarHeight, closeButtonSize, cellSize, bodyPosition, bodySize
 if isMobile() then
     -- Mobile: nhỏ hơn
-    menuSize = UDim2.new(0, 420, 0, 320)
-    topBarHeight = 40
-    closeButtonSize = 36
-    cellSize = UDim2.new(0, 132, 0, 132)
-    bodyPosition = UDim2.new(0.5, 0, 0, 45)
-    bodySize = UDim2.new(1, -10, 1, -50)
+    MainMenuWindow.Position = UDim2.new(0, 420, 0, 320)
+    TopBar_2.Size = UDim2.new(1, 0, 0, 40)
+    CloseButton_2.Size = UDim2.new(0, 57, 0, 57)
+    UIGridLayout_2.CellSize = UDim2.new0, 132, 0, 132)
+    Body_2.Position = UDim2.new(0.5, 0, 0, 45)
+    Body_2.Size = UDim2.new(1, -10, 1, -50)
 end
 
 local MainMenuWindow = Instance.new("Frame", FTFHAX)
