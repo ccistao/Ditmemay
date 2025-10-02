@@ -386,7 +386,7 @@ local function startBeastTracker()
     local function detectSkill(b)
         if not b then return "Unknown" end
         local stats = b:FindFirstChild("TempPlayerStatsModule") or b:FindFirstChild("PlayerStats")
-        if not statsenden return "Unknown" end
+        if not stats return "Unknown" end
         local chosen = stats:FindFirstChild("SkillChosen")
         return chosen and chosen.Value or "Unknown"
     end
