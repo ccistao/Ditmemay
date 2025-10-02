@@ -93,14 +93,12 @@ TextLabel.TextScaled = true
 TextLabel.TextStrokeTransparency = 0
 TextLabel.TextYAlignment = Enum.TextYAlignment.Bottom
 
-
-
 local MainMenuWindow = Instance.new("Frame", FTFHAX)
 MainMenuWindow.Name = "MainMenuWindow"
 MainMenuWindow.AnchorPoint = Vector2.new(0.5, 0.5)
 MainMenuWindow.BackgroundColor3 = Color3.fromRGB(47, 47, 47)
 MainMenuWindow.BorderSizePixel = 3
-MainMenuWindow.BorderColor3 =Color3.fromRGB(1, 1, 1)
+MainMenuWindow.BorderColor3 = Color3.fromRGB(1, 1, 1)
 MainMenuWindow.Position = UDim2.new(0.5, 0, 0.5, -29)
 MainMenuWindow.Size = UDim2.new(0, 672, 0, 510)
 MainMenuWindow.Visible = false
@@ -109,7 +107,6 @@ local TopBar_2 = Instance.new("Frame", MainMenuWindow)
 TopBar_2.Name = "TopBar"
 TopBar_2.BackgroundColor3 = Color3.fromRGB(31, 31, 31)
 TopBar_2.BorderSizePixel = 0
-TopBar_2.BorderColor3 =Color3.fromRGB(1, 1, 1)
 TopBar_2.Size = UDim2.new(1, 0, 0, 65)
 
 local CloseButton_2 = Instance.new("TextButton", TopBar_2)
@@ -147,10 +144,7 @@ UIGridLayout_2.SortOrder = Enum.SortOrder.LayoutOrder
 UIGridLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
 UIGridLayout_2.CellSize = UDim2.new(0, 210, 0, 210)
 
--- Kích thước tùy theo thiết bị
-
 if isMobile() then
-    -- Mobile: nhỏ hơn
     PageTitleText_2.Position = UDim2.new(0, 10, 0, 0)
     PageTitleText_2.Size = UDim2.new(0.8, 0, 0, 40)
     CheatButton.Position = UDim2.new(-0.08, 0, 0.79, 0)
@@ -184,14 +178,14 @@ local function makeButton(btn, text, iconId, index, callback)
     icon.Size = UDim2.new(0.9,0,0.9,0)
     icon.Image = iconId or ""
 
-    local bottom = Instance.new("TextLabel", btn)  
-    bottom.BackgroundTransparency = 1  
-    bottom.Position = UDim2.new(0, 0, 0.8, 0)  
-    bottom.Size = UDim2.new(1, 0, 0.2, 0)  
-    bottom.Text = text  
-    bottom.Font = Enum.Font.GothamBold  
-    bottom.TextColor3 = Color3.new(1,1,1)  
-    bottom.TextScaled = true  
+    local bottom = Instance.new("TextLabel", btn)
+    bottom.BackgroundTransparency = 1
+    bottom.Position = UDim2.new(0, 0, 0.8, 0)
+    bottom.Size = UDim2.new(1, 0, 0.2, 0)
+    bottom.Text = text
+    bottom.Font = Enum.Font.GothamBold
+    bottom.TextColor3 = Color3.new(1,1,1)
+    bottom.TextScaled = true
 
     activeStates[index] = false
     btn.MouseButton1Down:Connect(function()
@@ -203,7 +197,85 @@ local function makeButton(btn, text, iconId, index, callback)
         end
         if callback then callback(activeStates[index]) end
     end)
-end   -- ✅ đóng hàm ở đây
+end
+
+-- ===== HÀM HỖ TRỢ BEAST TRACKER =====
+local beastTrackerRunning = false
+local beastConnections = {}
+
+local function ensureCooldownUI()
+    local existing = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
+    if existing then
+        return existing:FindFirstChild("CooldownLabel")
+    end
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "BeastCooldownUI"
+    gui.Parent = plr.PlayerGui
+    gui.ResetOnSpawn = false
+    
+    local label = Instance.new("TextLabel")
+    label.Name = "CooldownLabel"
+    label.Parent = gui
+    label.Size = UDim2.new(0, 300, 0, 50)
+    label.Position = UDim2.new(0.5, -150, 0, 100)
+    label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    label.BackgroundTransparency = 0.5
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.Text = "Finding beast..."
+    
+    return label
+end
+
+local function showBanner(text, name)
+    local existing = plr.PlayerGui:FindFirstChild(name)
+    if existing then existing:Destroy() end
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = name
+    gui.Parent = plr.PlayerGui
+    gui.ResetOnSpawn = false
+    
+    local frame = Instance.new("Frame")
+    frame.Parent = gui
+    frame.Size = UDim2.new(0, 400, 0, 80)
+    frame.Position = UDim2.new(0.5, -200, 0.3, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    frame.BorderSizePixel = 0
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Parent = frame
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = text
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.GothamBold
+    
+    task.delay(3, function()
+        if gui and gui.Parent then gui:Destroy() end
+    end)
+end
+
+local function isOutsideCave(position)
+    return position.Y > -20
+end
+
+local function disconnectBeastTracker()
+    if _G.BeastHeartbeat then
+        _G.BeastHeartbeat:Disconnect()
+        _G.BeastHeartbeat = nil
+    end
+    
+    for _, conn in ipairs(beastConnections) do
+        if typeof(conn) == "RBXScriptConnection" then
+            conn:Disconnect()
+        end
+    end
+    beastConnections = {}
+end
 
 local function setBeastTrackerVisible(state)
     local g = plr.PlayerGui:FindFirstChild("BeastCooldownUI")
@@ -212,33 +284,23 @@ local function setBeastTrackerVisible(state)
     end
 end
 
-local beastTrackerRunning = false
-local beastConnections = {}
-local function ensureCooldownUI()
-local function showBanner()
-local function isOutsideCave()
-local function disconnectBeastTracker()
-
-
--- ===== Beast Tracker (logic cũ) =====
+-- ===== BEAST TRACKER =====
 local beast, foundBeast, skill = nil, false, "Unknown"
 local cooldownStart, usedRunner, stalkerActive = nil, false, false
 local labelCooldown = nil
 
--- Gọi khi bật
 local function startBeastTracker()
     if beastTrackerRunning then return end
     beastTrackerRunning = true
     labelCooldown = ensureCooldownUI()
     setBeastTrackerVisible(true)
 
-    local beast, foundBeast, skill = nil, false, "Unknown"
-    local cooldownStart, usedRunner, stalkerActive = nil, false, false
+    beast, foundBeast, skill = nil, false, "Unknown"
+    cooldownStart, usedRunner, stalkerActive = nil, false, false
 
-    -- Dots animation
     local runningDots = false
     task.spawn(function()
-        if runningDots then return end -- đã chạy rồi thì không chạy thêm
+        if runningDots then return end
         runningDots = true
         local dots = 0
         while task.wait(0.5) do
@@ -249,16 +311,13 @@ local function startBeastTracker()
         end
     end)
 
-    -- Detect skill khi game bắt đầu
     local function detectSkillWhenGameActive()
         task.spawn(function()
             local gameActive = Replicated:WaitForChild("IsGameActive")
-            -- chờ tới khi game thực sự bắt đầu
             if gameActive:IsA("BoolValue") then
                 repeat task.wait(0.5) until gameActive.Value == true
             end
 
-            -- đảm bảo Beast vẫn tồn tại
             if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
 
             local power
@@ -280,7 +339,6 @@ local function startBeastTracker()
         end)
     end
 
-    -- Scan Beast
     local function isBeast(player)
         if not player then return false end
         local s = player:FindFirstChild("TempPlayerStatsModule")
@@ -319,7 +377,6 @@ local function startBeastTracker()
         end
     end)
 
-    -- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
     if _G.BeastHeartbeat then
         _G.BeastHeartbeat:Disconnect()
     end
@@ -332,7 +389,6 @@ local function startBeastTracker()
         local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
         if not hum then return end
 
-        -- RUNNER
         if skill == "runner" then
             if hum.WalkSpeed > 19 and not usedRunner then
                 usedRunner = true
@@ -344,7 +400,7 @@ local function startBeastTracker()
                         if not foundBeast then return end
                         if labelCooldown and labelCooldown.Parent then
                             labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
-                      endnd
+                        end
                         RunService.Heartbeat:Wait()
                     until tick() - startUse >= 3
 
@@ -364,7 +420,6 @@ local function startBeastTracker()
                 end)
             end
 
-        -- STALKER
         elseif skill == "stalker" then
             local anyOff = false
             for _, o in ipairs(beast.Character:GetDescendants()) do
@@ -409,14 +464,13 @@ local function startBeastTracker()
     end)
 end
 
--- Gọi khi tắt
 local function stopBeastTracker()
     beastTrackerRunning = false
     setBeastTrackerVisible(false)
     disconnectBeastTracker()
 end
 
--- ===== PC Progress =====
+-- ===== PC PROGRESS =====
 local pcProgressRunning = false
 local pcConnections = {}
 
@@ -456,7 +510,6 @@ local function startPCProgress()
     local CHECK_OFFSET = Vector3.new(0, 1, 0)
     local CHECK_RADIUS = 2
 
-    -- Billboard
     local function findAttachPart(pc)
         if pc:IsA("Model") then
             local scr = pc:FindFirstChild("Screen")
@@ -503,7 +556,6 @@ local function startPCProgress()
         pcLabels, finished, pcState, hookedPCs, lastPercent, pendingUpdate = {}, {}, {}, {}, {}, {}
     end
 
-    -- Visibility check
     local function isVisible(part)
         if not part then return false end
         local camPos = Camera.CFrame.Position
@@ -535,7 +587,6 @@ local function startPCProgress()
         return false
     end
 
-    -- Progress update
     local function queueProgress(pc, value)
         if finished[pc] then return end
         if pcState[pc] == "ERROR" or pcState[pc] == "DONE" then return end
@@ -569,7 +620,6 @@ local function startPCProgress()
         end
     end))
 
-    -- Hook vào ActionProgress
     local function nearestPC(pos, maxDist)
         local best,bd = nil, maxDist or 30
         for pc,_ in pairs(pcLabels) do
@@ -616,7 +666,6 @@ local function startPCProgress()
     for _,p in ipairs(Players:GetPlayers()) do hookPlayer(p) end
     table.insert(pcConnections, Players.PlayerAdded:Connect(hookPlayer))
 
-    -- Beast check để chỉnh khoảng cách hiển thị
     local function updateRole()
         local stats = LocalPlayer:FindFirstChild("TempPlayerStatsModule") or LocalPlayer:FindFirstChild("PlayerStats")
         if stats then
@@ -646,75 +695,7 @@ local function startPCProgress()
     end)
     watchStats()
 
-    -- Screen state (DONE / ERROR)
     local function applyScreenState(pc, c)
         local pack = createBillboard(pc)
         if not pack then return end
-        if c.G > c.R + 0.2 and c.G > c.B + 0.2 then
-            pcState[pc] = "DONE"
-            pack.label.Text = "DONE"
-            pack.label.TextColor3 = Color3.new(0,1,0)
-        elseif c.R > c.G + 0.2 and c.R > c.B + 0.2 then
-            pcState[pc] = "ERROR"
-            pack.label.Text = "ERROR"
-            pack.label.TextColor3 = Color3.new(1,0,0)
-        else
-            if not finished[pc] then
-                pcState[pc] = nil
-            end
-        end
-    end
-    local function watchPC(pc)
-        if hookedPCs[pc] then return end
-        hookedPCs[pc] = true
-        local scr = pc:FindFirstChild("Screen")
-        if scr and scr:IsA("BasePart") then
-            applyScreenState(pc, scr.Color)
-            table.insert(pcConnections, scr:GetPropertyChangedSignal("Color"):Connect(function()
-                applyScreenState(pc, scr.Color)
-            end))
-        end
-    end
-
-    -- Map Scan
-    table.insert(pcConnections, task.spawn(function()
-        while pcProgressRunning do
-            local map = RS:FindFirstChild("CurrentMap") and RS.CurrentMap.Value
-            if map then
-                for _,d in ipairs(map:GetDescendants()) do
-                    if d.Name == "ComputerTable" then
-                        createBillboard(d)
-                        watchPC(d)
-                    end
-                end
-            end
-            task.wait(1)
-        end
-    end))
-
-    -- Render visibility
-    table.insert(pcConnections, RunService.RenderStepped:Connect(function()
-        local char = LocalPlayer.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local camPos = Camera.CFrame.Position
-        for pc,pack in pairs(pcLabels) do
-            local part,label = pack.part, pack.label
-            if part and label then
-                local origin = hrp and hrp.Position or camPos
-                local dist = (part.Position - origin).Magnitude
-                if dist <= currentShowDist and isVisible(part) then
-                    label.Visible = true
-                else
-                    label.Visible = false
-                end
-            end
-        end
-    end))
-
-    -- Map Change reset
-    if RS:FindFirstChild("CurrentMap") then
-        table.insert(pcConnections, RS.CurrentMap.Changed:Connect(function()
-            clearAll()
-        end))
-    end
-end
+        if c.G > c.R + 0.2 and c
