@@ -272,7 +272,7 @@ local function ensureCooldownUI()
             local lbl = gui:FindFirstChild("CooldownLabel", true)
             if lbl and not foundBeast then   -- ✅ check foundBeast ở trong thay vì ở điều kiện while
                 dots = (dots % 3) + 1
-                lbl.Text = "Finding beast" .. string.rep(".", dots)
+                lbl.Text = "Finding new beast" .. string.rep(".", dots)
             end
             task.wait(0.5)
         end
