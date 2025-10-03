@@ -504,47 +504,46 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
     if not hum then return end
 
     -- RUNNER
-    if skill == "runner" then
-        if hum.WalkSpeed > 19 and not usedRunner then
-            usedRunner = true
-            showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+if skill == "runner" then
+    if hum.WalkSpeed > 20 and not usedRunner then  -- > 20 = đang dùng Runner
+        usedRunner = true
+        showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
 
-            task.spawn(function()
-                local startUse = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startUse >= 3
-
-                -- Đợi WalkSpeed thực sự giảm về bình thường
-                local waitStart = tick()
-                repeat
-                    RunService.Heartbeat:Wait()
-                    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-                    local currentHum = beast.Character and beast.Character:FindFirstChild("Humanoid")
-                    if not currentHum then return end
-                    -- Timeout sau 1.5s để tránh treo
-                    if tick() - waitStart > 1.5 then break end
-                until currentHum.WalkSpeed <= 19
-
-                local startCD = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startCD >= 22
-
-                if foundBeast and labelCooldown and labelCooldown.Parent then
-                    labelCooldown.Text = "Cooldown: Runner Ready!!!"
+        task.spawn(function()
+            local startUse = tick()
+            repeat
+                if not foundBeast then return end
+                if labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
                 end
-                usedRunner = false
-            end)
-        end
+                RunService.Heartbeat:Wait()
+            until tick() - startUse >= 3
+
+            -- Đợi WalkSpeed giảm về normal Beast (≤19)
+            local waitStart = tick()
+            repeat
+                RunService.Heartbeat:Wait()
+                if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+                local currentHum = beast.Character and beast.Character:FindFirstChild("Humanoid")
+                if not currentHum then return end
+                if tick() - waitStart > 1.5 then break end
+            until currentHum.WalkSpeed <= 19  -- ≤19 = đã về normal (17)
+
+            local startCD = tick()
+            repeat
+                if not foundBeast then return end
+                if labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
+                end
+                RunService.Heartbeat:Wait()
+            until tick() - startCD >= 22
+
+            if foundBeast and labelCooldown and labelCooldown.Parent then
+                labelCooldown.Text = "Cooldown: Runner Ready!!!"
+            end
+            usedRunner = false
+        end)
+    end
 
     -- STALKER
     elseif skill == "stalker" then
