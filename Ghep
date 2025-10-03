@@ -943,6 +943,14 @@ end)
 CloseButton_2.MouseButton1Down:Connect(function()
     MainMenuWindow.Visible = false
 end)
+local UIS = game:GetService("UserInputService")
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        MainMenuWindow.Visible = not MainMenuWindow.Visible
+    end
+end)
 
 -- ===== 6 NÚT MENU =====
 makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
