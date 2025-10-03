@@ -102,6 +102,7 @@ MainMenuWindow.BorderColor3 = Color3.fromRGB(1, 1, 1)
 MainMenuWindow.Position = UDim2.new(0.5, 0, 0.5, -29)
 MainMenuWindow.Size = UDim2.new(0, 672, 0, 510)
 MainMenuWindow.Visible = false
+MainMenuWindow.Active = true
 
 local TopBar_2 = Instance.new("Frame", MainMenuWindow)
 TopBar_2.Name = "TopBar"
@@ -119,6 +120,7 @@ CloseButton_2.Text = "X"
 CloseButton_2.Font = Enum.Font.GothamBold
 CloseButton_2.TextColor3 = Color3.new(1,1,1)
 CloseButton_2.TextScaled = true
+CloseButton_2.Modal = true
 
 local PageTitleText_2 = Instance.new("TextLabel", TopBar_2)
 PageTitleText_2.Name = "PageTitleText"
