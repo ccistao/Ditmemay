@@ -490,92 +490,132 @@ local function startBeastTracker()
         end
     end)
 
-    if _G.BeastHeartbeat then
-        _G.BeastHeartbeat:Disconnect()
-    end
+    -- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
+if _G.BeastHeartbeat then
+    _G.BeastHeartbeat:Disconnect()
+end
 
-    _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
-        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-        if not labelCooldown or not labelCooldown.Parent then return end
+_G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
+    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+    if not labelCooldown or not labelCooldown.Parent then return end
 
-        local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
-        local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
-        if not hum then return end
+    local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
+    local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
+    if not hum then return end
 
-        if skill == "runner" then
-            if hum.WalkSpeed > 19 and not usedRunner then
-                usedRunner = true
-                showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+    -- RUNNER
+    if skill == "runner" then
+        if hum.WalkSpeed > 19 and not usedRunner then
+            usedRunner = true
+            showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
 
-                task.spawn(function()
-                    local startUse = tick()
-                    repeat
-                        if not foundBeast then return end
-                        if labelCooldown and labelCooldown.Parent then
-                            labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
-                        end
-                        RunService.Heartbeat:Wait()
-                    until tick() - startUse >= 3
-
-                    local startCD = tick()
-                    repeat
-                        if not foundBeast then return end
-                        if labelCooldown and labelCooldown.Parent then
-                            labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
-                        end
-                        RunService.Heartbeat:Wait()
-                    until tick() - startCD >= 22
-
-                    if foundBeast and labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = "Cooldown: Runner Ready!!!"
+            task.spawn(function()
+                local startUse = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
                     end
-                    usedRunner = false
-                end)
-            end
+                    RunService.Heartbeat:Wait()
+                until tick() - startUse >= 3
 
-        elseif skill == "stalker" then
-            local anyOff = false
-            for _, o in ipairs(beast.Character:GetDescendants()) do
-                if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
-                    if not o.Enabled or (o.Brightness and o.Brightness == 0) then
-                        anyOff = true
-                        break
+                -- Đợi WalkSpeed thực sự giảm về bình thường
+                local waitStart = tick()
+                repeat
+                    RunService.Heartbeat:Wait()
+                    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+                    local currentHum = beast.Character and beast.Character:FindFirstChild("Humanoid")
+                    if not currentHum then return end
+                    -- Timeout sau 1.5s để tránh treo
+                    if tick() - waitStart > 1.5 then break end
+                until currentHum.WalkSpeed <= 19
+
+                local startCD = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
                     end
+                    RunService.Heartbeat:Wait()
+                until tick() - startCD >= 22
+
+                if foundBeast and labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = "Cooldown: Runner Ready!!!"
+                end
+                usedRunner = false
+            end)
+        end
+
+    -- STALKER
+    elseif skill == "stalker" then
+        local anyOff = false
+        for _, o in ipairs(beast.Character:GetDescendants()) do
+            if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
+                if not o.Enabled or (o.Brightness and o.Brightness == 0) then
+                    anyOff = true
+                    break
                 end
             end
-
-            if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
-                stalkerActive = true
-                showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
-
-                task.spawn(function()
-                    local startUse = tick()
-                    repeat
-                        if not foundBeast then return end
-                        if labelCooldown and labelCooldown.Parent then
-                            labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
-                        end
-                        RunService.Heartbeat:Wait()
-                    until tick() - startUse >= 7
-
-                    local startCD = tick()
-                    repeat
-                        if not foundBeast then return end
-                        if labelCooldown and labelCooldown.Parent then
-                            labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
-                        end
-                        RunService.Heartbeat:Wait()
-                    until tick() - startCD >= 20
-
-                    if foundBeast and labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = "Cooldown: Stalker Ready!!!"
-                    end
-                    stalkerActive = false
-                end)
-            end
         end
-    end)
-end
+
+        if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
+            stalkerActive = true
+            showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
+
+            task.spawn(function()
+                local startUse = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
+                    end
+                    RunService.Heartbeat:Wait()
+                until tick() - startUse >= 7
+
+                -- Đợi light thực sự bật lại
+                local waitStart = tick()
+                repeat
+                    RunService.Heartbeat:Wait()
+                    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then 
+                        stalkerActive = false
+                        return 
+                    end
+                    if not beast.Character then 
+                        stalkerActive = false
+                        return 
+                    end
+                    
+                    -- Timeout sau 2s để tránh treo
+                    if tick() - waitStart > 2 then break end
+                    
+                    local allOn = true
+                    for _, o in ipairs(beast.Character:GetDescendants()) do
+                        if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
+                            if not o.Enabled or (o.Brightness and o.Brightness == 0) then
+                                allOn = false
+                                break
+                            end
+                        end
+                    end
+                until allOn
+
+                local startCD = tick()
+                repeat
+                    if not foundBeast then return end
+                    if labelCooldown and labelCooldown.Parent then
+                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
+                    end
+                    RunService.Heartbeat:Wait()
+                until tick() - startCD >= 20
+
+                if foundBeast and labelCooldown and labelCooldown.Parent then
+                    labelCooldown.Text = "Cooldown: Stalker Ready!!!"
+                end
+                stalkerActive = false
+            end)
+        end
+    end
+end)
 
 local function stopBeastTracker()
     beastTrackerRunning = false
