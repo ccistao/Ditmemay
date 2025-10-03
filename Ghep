@@ -217,20 +217,63 @@ local function ensureCooldownUI()
     local label = Instance.new("TextLabel")
     label.Name = "CooldownLabel"
     label.Parent = gui
-    label.Size = UDim2.new(0, 400, 0, 70)  -- Kích thước lớn hơn
-    label.Position = UDim2.new(0.5, -200, 0, 80)  -- Căn giữa màn hình
+    label.Size = UDim2.new(0, 400, 0, 70)
+    label.Position = UDim2.new(0.5, -200, 0, 80)
     label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    label.BackgroundTransparency = 0.3  -- Trong suốt hơn một chút
+    label.BackgroundTransparency = 0.3
     label.TextColor3 = Color3.new(1, 1, 1)
     label.TextScaled = true
     label.Font = Enum.Font.GothamBold
     label.Text = "Finding beast..."
     label.TextStrokeTransparency = 0.5
+    label.Active = true  -- Cho phép tương tác
     
-    -- Thêm viền bo tròn
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = label
+    
+    -- ===== DRAG SYSTEM CHO CD UI =====
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        label.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+    
+    label.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = label.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    label.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+    -- ===== END DRAG =====
     
     return label
 end
@@ -352,8 +395,18 @@ local labelCooldown = nil
 local function startBeastTracker()
     if beastTrackerRunning then return end
     beastTrackerRunning = true
-    labelCooldown = ensureCooldownUI()
-    setBeastTrackerVisible(true)
+    
+    -- Tìm UI cũ hoặc tạo mới
+    labelCooldown = plr.PlayerGui:FindFirstChild("BeastCooldownUI") and 
+                    plr.PlayerGui.BeastCooldownUI:FindFirstChild("CooldownLabel") or 
+                    ensureCooldownUI()
+    
+    setBeastTrackerVisible(true)  -- Hiện UI
+    
+    -- Reset text
+    if labelCooldown then
+        labelCooldown.Text = "Finding beast..."
+    end
 
     beast, foundBeast, skill = nil, false, "Unknown"
     cooldownStart, usedRunner, stalkerActive = nil, false, false
@@ -544,18 +597,27 @@ local function disconnectPCProgress()
 end
 
 local function stopPCProgress()
+    pcProgressRunning = false
     disconnectPCProgress()
+    
+    -- Chỉ ẩn, không xóa
     for _,v in pairs(workspace:GetDescendants()) do
         if v:IsA("BillboardGui") and v.Name == "PCProgressBB" then
             v.Enabled = false
         end
     end
-    pcProgressRunning = false
 end
 
 local function startPCProgress()
     if pcProgressRunning then return end
     pcProgressRunning = true
+
+    -- Hiện lại các billboard cũ nếu có
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BillboardGui") and v.Name == "PCProgressBB" then
+            v.Enabled = true
+        end
+    end
 
     local RS = Replicated
     local Camera = workspace.CurrentCamera
@@ -588,6 +650,19 @@ local function startPCProgress()
         if pcLabels[pc] then return pcLabels[pc] end
         local part = findAttachPart(pc)
         if not part then return end
+        
+        -- Kiểm tra xem đã có billboard cũ chưa
+        local existingBB = part:FindFirstChild("PCProgressBB")
+        if existingBB then
+            existingBB.Enabled = true
+            local tl = existingBB:FindFirstChildOfClass("TextLabel")
+            if tl then
+                pcLabels[pc] = {label = tl, bb = existingBB, part = part}
+                lastPercent[pc] = 0
+                return pcLabels[pc]
+            end
+        end
+        
         local bb = Instance.new("BillboardGui")
         bb.Name = "PCProgressBB"
         bb.Size = UDim2.new(0, 100, 0, 40)
@@ -595,6 +670,7 @@ local function startPCProgress()
         bb.AlwaysOnTop = true
         bb.Adornee = part
         bb.Parent = part
+        
         local tl = Instance.new("TextLabel")
         tl.Size = UDim2.new(1,0,1,0)
         tl.BackgroundTransparency = 1
@@ -604,6 +680,7 @@ local function startPCProgress()
         tl.Text = "0%"
         tl.Visible = true
         tl.Parent = bb
+        
         pcLabels[pc] = {label = tl, bb = bb, part = part}
         lastPercent[pc] = 0
         return pcLabels[pc]
@@ -611,37 +688,34 @@ local function startPCProgress()
 
     local function clearAll()
         for _,v in pairs(pcLabels) do
-            if v.bb then v.bb:Destroy() end
+            if v.bb then v.bb.Enabled = false end
         end
         pcLabels, finished, pcState, hookedPCs, lastPercent, pendingUpdate = {}, {}, {}, {}, {}, {}
     end
 
     local function isVisible(part)
-    if not part then return false end
-    local camPos = Camera.CFrame.Position
-    local partPos = part.Position + CHECK_OFFSET
-    local distance = (partPos - camPos).Magnitude
-    local dir = (partPos - camPos).Unit * distance
-    
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {LocalPlayer.Character}
-    params.FilterType = Enum.RaycastFilterType.Blacklist
-    
-    local result = workspace:Raycast(camPos, dir, params)
-    
-    -- Nếu không có gì chặn
-    if not result then 
-        return true
+        if not part then return false end
+        local camPos = Camera.CFrame.Position
+        local partPos = part.Position + CHECK_OFFSET
+        local distance = (partPos - camPos).Magnitude
+        local dir = (partPos - camPos).Unit * distance
+        
+        local params = RaycastParams.new()
+        params.FilterDescendantsInstances = {LocalPlayer.Character}
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        
+        local result = workspace:Raycast(camPos, dir, params)
+        
+        if not result then 
+            return true
+        end
+        
+        if result.Instance:IsDescendantOf(part.Parent) then
+            return true
+        end
+        
+        return false
     end
-    
-    -- Nếu raycast trúng chính PC hoặc các part thuộc PC
-    if result.Instance:IsDescendantOf(part.Parent) then
-        return true
-    end
-    
-    -- Nếu trúng tường hoặc vật khác -> ẨN
-    return false
-end
 
     local function queueProgress(pc, value)
         if finished[pc] then return end
@@ -735,6 +809,7 @@ end
             end
         end
     end
+    
     local function watchStats()
         local stats = LocalPlayer:FindFirstChild("TempPlayerStatsModule") or LocalPlayer:FindFirstChild("PlayerStats")
         if stats then
@@ -768,6 +843,7 @@ end
             end
         end
     end
+    
     local function watchPC(pc)
         if hookedPCs[pc] then return end
         hookedPCs[pc] = true
@@ -795,12 +871,31 @@ end
         end
     end))
 
+    table.insert(pcConnections, RunService.RenderStepped:Connect(function()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local camPos = Camera.CFrame.Position
+        for pc,pack in pairs(pcLabels) do
+            local part,label = pack.part, pack.label
+            if part and label then
+                local origin = hrp and hrp.Position or camPos
+                local dist = (part.Position - origin).Magnitude
+                if dist <= currentShowDist and isVisible(part) then
+                    label.Visible = true
+                else
+                    label.Visible = false
+                end
+            end
+        end
+    end))
+
     if RS:FindFirstChild("CurrentMap") then
         table.insert(pcConnections, RS.CurrentMap.Changed:Connect(function()
             clearAll()
         end))
     end
 end
+
 -- ===== SỰ KIỆN MỞ/ĐÓNG MENU =====
 CheatButton.MouseButton1Down:Connect(function()
     MainMenuWindow.Visible = not MainMenuWindow.Visible
@@ -808,50 +903,6 @@ end)
 
 CloseButton_2.MouseButton1Down:Connect(function()
     MainMenuWindow.Visible = false
-end)
-
--- ===== THÊM SAU KHI TẠO MainMenuWindow =====
-
--- Hệ thống Drag UI
-local dragging
-local dragInput
-local dragStart
-local startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    MainMenuWindow.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-end
-
-TopBar_2.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainMenuWindow.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-TopBar_2.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UIS.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
 end)
 
 -- ===== 6 NÚT MENU =====
