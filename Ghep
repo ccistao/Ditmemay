@@ -220,10 +220,7 @@ local function ensureCooldownUI()
     label.Name = "CooldownLabel"
     label.Parent = gui
     label.Size = UDim2.new(0, 200, 0, 43)
-
-    label.AnchorPoint = Vector2.new(0.5, 0.5)
-    label.Position = UDim2.new(0.5, 0, 0.5, 0)
-
+    label.Position = UDim2.new(0.5, -200, 0, 80)
     label.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     label.BackgroundTransparency = 0.3
     label.TextColor3 = Color3.new(1, 1, 1)
@@ -231,7 +228,7 @@ local function ensureCooldownUI()
     label.Font = Enum.Font.GothamBold
     label.Text = "Finding beast..."
     label.TextStrokeTransparency = 0.5
-    label.Active = true -- Cho phép tương tác
+    label.Active = true  -- Cho phép tương tác
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
