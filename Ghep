@@ -98,6 +98,7 @@ local dragging, dragInput, dragStart, startPos
 
 local function update(input)
     local delta = input.Position - dragStart
+if delta.Magnitude > 2 then moved = true end
     if dragging then
         CheatButton.Position = UDim2.new(
             startPos.X.Scale, startPos.X.Offset + delta.X,
