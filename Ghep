@@ -246,6 +246,339 @@ local function makeButton(btn, text, iconId, index, callback)
     end)
 end
 
+-- ===== HÀM WALLHOP VIEW =====
+local WallhopView = {}
+WallhopView.enabled = false
+WallhopView.connections = {}
+WallhopView.cachedParts = {}
+
+local player = game.Players.LocalPlayer
+local RADIUS = 35
+local SCAN_DELAY = 0.3
+
+local overlapParams = OverlapParams.new()
+overlapParams.FilterType = Enum.RaycastFilterType.Whitelist
+overlapParams.FilterDescendantsInstances = {workspace}
+
+local function GetHRP()
+    local char = player.Character
+    if char then
+        return char:FindFirstChild("HumanoidRootPart")
+    end
+    return nil
+end
+
+local function IsCharacterPart(part)
+    local model = part:FindFirstAncestorOfClass("Model")
+    return model and game.Players:GetPlayerFromCharacter(model) ~= nil
+end
+
+local function IsPureBlock(part)
+    return part:IsA("Part") and part.Shape == Enum.PartType.Block
+end
+
+local function AddOutline(part)
+    if part:FindFirstChildOfClass("SelectionBox") then return end
+    local selBox = Instance.new("SelectionBox")
+    selBox.Adornee = part
+    selBox.LineThickness = 0.025
+    selBox.Color3 = Color3.new(1, 1, 1)
+    selBox.SurfaceTransparency = 1
+    selBox.Parent = part
+end
+
+local function RemoveOutline(part)
+    local sel = part:FindFirstChildOfClass("SelectionBox")
+    if sel then sel:Destroy() end
+end
+
+function WallhopView.start()
+    if WallhopView.enabled then return end
+    WallhopView.enabled = true
+    
+    -- Spawn loop quét part
+    local scanTask = task.spawn(function()
+        while task.wait(SCAN_DELAY) do
+            if not WallhopView.enabled then break end
+            
+            local hrp = GetHRP()
+            if hrp then
+                local partsInRadius = workspace:GetPartBoundsInRadius(hrp.Position, RADIUS, overlapParams)
+                local seen = {}
+
+                -- Thêm outlines cho part mới
+                for _, part in ipairs(partsInRadius) do
+                    if IsPureBlock(part)
+                        and not IsCharacterPart(part)
+                        and part.Transparency < 0.95
+                        and part.CanCollide
+                        and (part.Size.X * part.Size.Y * part.Size.Z) >= 45
+                    then
+                        seen[part] = true
+                        if not WallhopView.cachedParts[part] then
+                            AddOutline(part)
+                            WallhopView.cachedParts[part] = true
+                        end
+                    end
+                end
+
+                -- Xóa outlines ở part đã ra khỏi phạm vi
+                for part in pairs(WallhopView.cachedParts) do
+                    if not seen[part] or not part.Parent then
+                        RemoveOutline(part)
+                        WallhopView.cachedParts[part] = nil
+                    end
+                end
+            end
+        end
+    end)
+    
+    table.insert(WallhopView.connections, scanTask)
+    print("Wallhop view bật")
+end
+
+function WallhopView.stop()
+    WallhopView.enabled = false
+    
+    -- Dừng tất cả task
+    for _, conn in pairs(WallhopView.connections) do
+        if typeof(conn) == "thread" then
+            task.cancel(conn)
+        elseif typeof(conn) == "RBXScriptConnection" then
+            conn:Disconnect()
+        end
+    end
+    WallhopView.connections = {}
+    
+    -- Xóa tất cả outlines
+    for part in pairs(WallhopView.cachedParts) do
+        RemoveOutline(part)
+    end
+    WallhopView.cachedParts = {}
+    
+    print("Wallhop view tắt")
+end
+
+-- ===== HÀM FLASHLIGHT =====
+local Flashlight = {}
+Flashlight.enabled = false
+Flashlight.connections = {}
+Flashlight.originalSettings = {}
+
+local Light = game:GetService("Lighting")
+
+local function dofullbright()
+    Light.Ambient = Color3.new(1, 1, 1)
+    Light.ColorShift_Bottom = Color3.new(1, 1, 1)
+    Light.ColorShift_Top = Color3.new(1, 1, 1)
+end
+
+function Flashlight.start()
+    if Flashlight.enabled then return end
+    Flashlight.enabled = true
+    
+    -- Lưu cài đặt gốc
+    Flashlight.originalSettings = {
+        Ambient = Light.Ambient,
+        ColorShift_Bottom = Light.ColorShift_Bottom,
+        ColorShift_Top = Light.ColorShift_Top
+    }
+    
+    -- Bật fullbright
+    dofullbright()
+    
+    -- Lưu connection để dọn dẹp sau
+    local conn = Light.LightingChanged:Connect(function()
+        if Flashlight.enabled then
+            dofullbright()
+        end
+    end)
+    table.insert(Flashlight.connections, conn)
+    
+    print("Flashlight bật")
+end
+
+function Flashlight.stop()
+    Flashlight.enabled = false
+    
+    -- Disconnect tất cả connections
+    for _, conn in pairs(Flashlight.connections) do
+        if typeof(conn) == "RBXScriptConnection" then
+            conn:Disconnect()
+        end
+    end
+    Flashlight.connections = {}
+    
+    -- Khôi phục cài đặt gốc
+    if Flashlight.originalSettings.Ambient then
+        Light.Ambient = Flashlight.originalSettings.Ambient
+        Light.ColorShift_Bottom = Flashlight.originalSettings.ColorShift_Bottom
+        Light.ColorShift_Top = Flashlight.originalSettings.ColorShift_Top
+    end
+    
+    print("Flashlight tắt")
+end
+
+-- ===== HÀM SELF MUTING =====
+local SelfMuting = {}
+SelfMuting.enabled = false
+SelfMuting.connections = {}
+SelfMuting.muted = {}
+SelfMuting.scanInterval = 0.25
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local function isLocalCharacterAncestor(inst)
+    local model = inst and inst:FindFirstAncestorOfClass("Model")
+    if not model then return false end
+    return Players:GetPlayerFromCharacter(model) == player
+end
+
+local function cleanupMutedEntry(s)
+    if not s then return end
+    local entry = SelfMuting.muted[s]
+    if entry then
+        if entry.c1 then pcall(function() entry.c1:Disconnect() end) end
+        if entry.c2 then pcall(function() entry.c2:Disconnect() end) end
+        if entry.c3 then pcall(function() entry.c3:Disconnect() end) end
+        if entry.d then pcall(function() entry.d:Disconnect() end) end
+        SelfMuting.muted[s] = nil
+    end
+end
+
+local function applyMuteToSound(s)
+    if not s or not s:IsA("Sound") then return end
+    if not isLocalCharacterAncestor(s) then return end
+    if SelfMuting.muted[s] then return end
+
+    local ok, vol = pcall(function() return s.Volume end)
+    local orig = (ok and vol) and vol or 1
+    pcall(function() s.Volume = 0 s:Stop() end)
+
+    local entry = {orig = orig}
+    entry.c1 = s:GetPropertyChangedSignal("Volume"):Connect(function()
+        if not s or not s.Parent then cleanupMutedEntry(s) return end
+        if SelfMuting.enabled and s.Volume ~= 0 then
+            pcall(function() s.Volume = 0 end)
+        end
+    end)
+    entry.c2 = s:GetPropertyChangedSignal("Playing"):Connect(function()
+        if not s or not s.Parent then cleanupMutedEntry(s) return end
+        if SelfMuting.enabled and s.Playing then
+            pcall(function() s:Stop() end)
+        end
+    end)
+    entry.c3 = s:GetPropertyChangedSignal("Parent"):Connect(function()
+        if not s or not s.Parent then cleanupMutedEntry(s) return end
+        if isLocalCharacterAncestor(s) then
+            if SelfMuting.enabled then
+                pcall(function() s.Volume = 0 s:Stop() end)
+            end
+        else
+            cleanupMutedEntry(s)
+        end
+    end)
+    entry.d = s.Destroying:Connect(function()
+        cleanupMutedEntry(s)
+    end)
+
+    SelfMuting.muted[s] = entry
+end
+
+local function scanCharacterSounds()
+    local char = player.Character
+    if not char then return end
+    for _, obj in ipairs(char:GetDescendants()) do
+        if obj:IsA("Sound") then
+            if SelfMuting.enabled then applyMuteToSound(obj) end
+        end
+    end
+end
+
+local function globalDescendantHandler(obj)
+    if obj:IsA("Sound") then
+        if SelfMuting.enabled and isLocalCharacterAncestor(obj) then
+            applyMuteToSound(obj)
+        end
+        local conn = obj:GetPropertyChangedSignal("Parent"):Connect(function()
+            if SelfMuting.enabled and isLocalCharacterAncestor(obj) then
+                applyMuteToSound(obj)
+            else
+                cleanupMutedEntry(obj)
+            end
+        end)
+        table.insert(SelfMuting.connections, conn)
+    end
+end
+
+local function unmuteAll()
+    for s, entry in pairs(SelfMuting.muted) do
+        if s and s.Parent then
+            pcall(function() s.Volume = entry.orig end)
+        end
+        cleanupMutedEntry(s)
+    end
+end
+
+function SelfMuting.start()
+    if SelfMuting.enabled then return end
+    SelfMuting.enabled = true
+    
+    -- CharacterAdded connection
+    local charConn = player.CharacterAdded:Connect(function(char)
+        task.wait(0.05)
+        if SelfMuting.enabled then scanCharacterSounds() end
+    end)
+    table.insert(SelfMuting.connections, charConn)
+    
+    -- Scan character hiện tại
+    if player.Character then
+        task.spawn(function()
+            task.wait(0.05)
+            if SelfMuting.enabled then scanCharacterSounds() end
+        end)
+    end
+    
+    -- DescendantAdded connection
+    local descConn = game.DescendantAdded:Connect(globalDescendantHandler)
+    table.insert(SelfMuting.connections, descConn)
+    
+    -- Scan loop
+    local scanTask = task.spawn(function()
+        while true do
+            if not SelfMuting.enabled then break end
+            if SelfMuting.enabled then
+                scanCharacterSounds()
+            end
+            task.wait(SelfMuting.scanInterval)
+        end
+    end)
+    table.insert(SelfMuting.connections, scanTask)
+    
+    print("Self muting bật")
+end
+
+function SelfMuting.stop()
+    SelfMuting.enabled = false
+    
+    -- Disconnect tất cả connections
+    for _, conn in pairs(SelfMuting.connections) do
+        if typeof(conn) == "RBXScriptConnection" then
+            conn:Disconnect()
+        elseif typeof(conn) == "thread" then
+            task.cancel(conn)
+        end
+    end
+    SelfMuting.connections = {}
+    
+    -- Unmute tất cả
+    unmuteAll()
+    
+    print("Self muting tắt")
+end
+
 -- ===== HÀM HỖ TRỢ BEAST TRACKER =====
 local beastTrackerRunning = false
 local beastConnections = {}
@@ -671,6 +1004,156 @@ local function stopBeastTracker()
     disconnectBeastTracker()
 end
 
+-- ===== HÀM SURVIVOR TRACKER =====
+local SurvivorTracker = {}
+SurvivorTracker.enabled = false
+SurvivorTracker.connections = {}
+SurvivorTracker.activeTimers = {}
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+-- Xác định Beast
+local function getBeast()
+    for _, player in ipairs(Players:GetPlayers()) do
+        local stats = player:FindFirstChild("TempPlayerStatsModule")
+        if stats and stats:FindFirstChild("IsBeast") and stats.IsBeast.Value then
+            return player
+        end
+    end
+end
+
+-- Rút gọn tên nếu quá dài
+local function shortenName(name)
+    if #name > 8 then
+        return string.sub(name, 1, 8) .. "..."
+    else
+        return name
+    end
+end
+
+-- Hàm tạo BillboardGui
+local function createHeadTimer(char, name)
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = (LocalPlayer ~= getBeast())
+    billboard.Parent = head
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextStrokeTransparency = 0
+    textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+    textLabel.TextWrapped = true
+    textLabel.TextYAlignment = Enum.TextYAlignment.Center
+    textLabel.Text = shortenName(name) .. "\n28s"
+
+    if UIS.TouchEnabled then
+        textLabel.TextScaled = true
+    else
+        textLabel.TextScaled = false
+        textLabel.TextSize = 20
+    end
+
+    textLabel.Parent = billboard
+    return billboard, textLabel
+end
+
+-- Bắt đầu timer
+local function startTimer(player)
+    if SurvivorTracker.activeTimers[player] then return end
+    local char = player.Character
+    if not char then return end
+
+    local gui, label = createHeadTimer(char, player.Name)
+    if not gui then return end
+
+    SurvivorTracker.activeTimers[player] = {
+        gui = gui,
+        label = label,
+        timeLeft = 28
+    }
+end
+
+-- Dừng timer
+local function stopTimer(player)
+    if SurvivorTracker.activeTimers[player] then
+        SurvivorTracker.activeTimers[player].gui:Destroy()
+        SurvivorTracker.activeTimers[player] = nil
+    end
+end
+
+function SurvivorTracker.start()
+    if SurvivorTracker.enabled then return end
+    SurvivorTracker.enabled = true
+    
+    -- Connection quét liên tục
+    local heartbeatConn = RunService.Heartbeat:Connect(function(dt)
+        if not SurvivorTracker.enabled then return end
+        
+        local beast = getBeast()
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr ~= beast then
+                local char = plr.Character
+                local humanoid = char and char:FindFirstChild("Humanoid")
+                if humanoid then
+                    if humanoid.PlatformStand or humanoid.JumpPower == 0 then
+                        if not SurvivorTracker.activeTimers[plr] then
+                            startTimer(plr)
+                        end
+                    else
+                        stopTimer(plr)
+                    end
+                end
+            end
+        end
+
+        -- Cập nhật timer
+        for player, data in pairs(SurvivorTracker.activeTimers) do
+            data.timeLeft = math.max(0, data.timeLeft - dt)
+            if data.label then
+                data.label.Text = shortenName(player.Name) .. "\n" .. math.ceil(data.timeLeft) .. "s"
+            end
+            if data.timeLeft <= 0 then
+                stopTimer(player)
+            end
+        end
+    end)
+    
+    table.insert(SurvivorTracker.connections, heartbeatConn)
+    print("Survivor tracker bật")
+end
+
+function SurvivorTracker.stop()
+    SurvivorTracker.enabled = false
+    
+    -- Disconnect tất cả connections
+    for _, conn in pairs(SurvivorTracker.connections) do
+        if typeof(conn) == "RBXScriptConnection" then
+            conn:Disconnect()
+        end
+    end
+    SurvivorTracker.connections = {}
+    
+    -- Xóa tất cả timer GUI
+    for player, data in pairs(SurvivorTracker.activeTimers) do
+        if data.gui then
+            data.gui:Destroy()
+        end
+    end
+    SurvivorTracker.activeTimers = {}
+    
+    print("Survivor tracker tắt")
+end
+
 -- ===== PC PROGRESS =====
 local pcProgressRunning = false
 local pcConnections = {}
@@ -1004,25 +1487,25 @@ end)
 -- ===== 6 NÚT MENU =====
 makeButton(Button1,"Wallhop view","rbxassetid://16994563429",1,function(state)
     if state then
-        print("Wallhop view bật")
+        WallhopView.start()
     else
-        print("Wallhop view tắt")
+        WallhopView.stop()
     end
 end)
 
 makeButton(Button2,"Flashlight","rbxassetid://106585954087372",2,function(state)
     if state then
-        print("Flashlight bật")
+        Flashlight.start()  
     else
-        print("Flashlight tắt")
+        Flashlight.stop()
     end
 end)
 
 makeButton(Button3,"Self muting","rbxassetid://90332761263250",3,function(state)
     if state then
-        print("Self muting bật")
+        SelfMuting.start()
     else
-        print("Self muting tắt")
+        SelfMuting.stop()
     end
 end)
 
@@ -1036,9 +1519,9 @@ end)
 
 makeButton(Button5,"Survivor tracker","rbxassetid://90682070728446",5,function(state)
     if state then
-        print("Survivor tracker bật")
+        SurvivorTracker.start()
     else
-        print("Survivor tracker tắt")
+        SurvivorTracker.stop()
     end
 end)
 
