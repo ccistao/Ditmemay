@@ -92,52 +92,7 @@ TextLabel.TextColor3 = Color3.new(1,1,1)
 TextLabel.TextScaled = true
 TextLabel.TextStrokeTransparency = 0
 TextLabel.TextYAlignment = Enum.TextYAlignment.Bottom
--- ===BẮT ĐẦU PHẦN DRAG===
-local UserInputService = game:GetService("UserInputService")
-local dragging, dragInput, dragStart, startPos
 
-local function update(input)
-    local delta = input.Position - dragStart
-    if delta.Magnitude > 2 then moved = true end
-    if dragging then
-        CheatButton.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-    end
-end
-
-CheatButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = CheatButton.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-                -- Kiểm tra lại khoảng cách tại thời điểm thả chuột
-                local finalDelta = input.Position - dragStart
-                if finalDelta.Magnitude <= 5 then  -- Chỉ click khi di chuyển < 5 pixel
-                    MainMenuWindow.Visible = not MainMenuWindow.Visible
-                end
-            end
-        end)
-    end
-end)
-
-CheatButton.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        update(input)
-    end
-end)
--- ===KẾT THÚC PHẦN DRAG===
 local MainMenuWindow = Instance.new("Frame", FTFHAX)
 MainMenuWindow.Name = "MainMenuWindow"
 MainMenuWindow.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1468,9 +1423,70 @@ local function startPCProgress()
 end
 
 -- ===== SỰ KIỆN MỞ/ĐÓNG MENU =====
-CheatButton.MouseButton1Down:Connect(function()
-    MainMenuWindow.Visible = not MainMenuWindow.Visible
+-- ===== DRAG NÚT SETTING =====
+local dragging = false
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
+local hasMoved = false
+local canClick = true
+
+local CLICK_THRESHOLD = 7 -- px di chuyển để tính là kéo
+
+local function updateDrag(input)
+	local delta = input.Position - dragStart
+	if delta.Magnitude > CLICK_THRESHOLD then
+		hasMoved = true
+	end
+	CheatButton.Position = UDim2.new(
+		startPos.X.Scale, startPos.X.Offset + delta.X,
+		startPos.Y.Scale, startPos.Y.Offset + delta.Y
+	)
+end
+
+CheatButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		hasMoved = false
+		dragStart = input.Position
+		startPos = CheatButton.Position
+
+		local connection
+		connection = input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				connection:Disconnect()
+				dragging = false
+
+				-- CHỈ mở menu nếu KHÔNG di chuyển
+				if not hasMoved and canClick then
+					MainMenuWindow.Visible = not MainMenuWindow.Visible
+					if MainMenuWindow.Visible then
+						UIS.MouseBehavior = Enum.MouseBehavior.Default
+						UIS.MouseIconEnabled = true
+					end
+				end
+
+				-- reset flags để tránh lỗi click lần sau
+				task.wait(0.05)
+				canClick = true
+				hasMoved = false
+			end
+		end)
+	end
 end)
+
+CheatButton.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		updateDrag(input)
+	end
+end)
+-- ===== end drag + click block =====
 
 CloseButton_2.MouseButton1Down:Connect(function()
     MainMenuWindow.Visible = false
