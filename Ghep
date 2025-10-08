@@ -1555,3 +1555,23 @@ makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
         stopPCProgress()
     end
 end)
+
+task.spawn(function()
+    task.wait(0.5)
+    
+    SelfMuting.start()
+    activeStates[3] = true
+    Button3.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    
+	startBeastTracker()
+    activeStates[4] = true
+    Button4.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+
+	SurvivorTracker.start()
+    activeStates[5] = true
+    Button5.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+
+    startPCProgress()
+    activeStates[6] = true
+    Button6.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+end)
