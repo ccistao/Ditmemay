@@ -207,7 +207,7 @@ WallhopView.enabled = false
 WallhopView.connections = {}
 WallhopView.cachedParts = {}
 
-local player = game.Players.LocalPlayer
+local wallhopPlayer = game.Players.LocalPlayer
 local RADIUS = 35
 local SCAN_DELAY = 0.3
 
@@ -289,7 +289,6 @@ function WallhopView.start()
     end)
     
     table.insert(WallhopView.connections, scanTask)
-    print("Wallhop view bật")
 end
 
 function WallhopView.stop()
@@ -310,8 +309,6 @@ function WallhopView.stop()
         RemoveOutline(part)
     end
     WallhopView.cachedParts = {}
-    
-    print("Wallhop view tắt")
 end
 
 -- ===== HÀM FLASHLIGHT =====
@@ -350,7 +347,6 @@ function Flashlight.start()
     end)
     table.insert(Flashlight.connections, conn)
     
-    print("Flashlight bật")
 end
 
 function Flashlight.stop()
@@ -371,7 +367,6 @@ function Flashlight.stop()
         Light.ColorShift_Top = Flashlight.originalSettings.ColorShift_Top
     end
     
-    print("Flashlight tắt")
 end
 
 -- ===== HÀM SELF MUTING =====
@@ -512,7 +507,6 @@ function SelfMuting.start()
     end)
     table.insert(SelfMuting.connections, scanTask)
     
-    print("Self muting bật")
 end
 
 function SelfMuting.stop()
@@ -530,8 +524,7 @@ function SelfMuting.stop()
     
     -- Unmute tất cả
     unmuteAll()
-    
-    print("Self muting tắt")
+
 end
 
 -- ===== HÀM HỖ TRỢ BEAST TRACKER =====
@@ -695,7 +688,6 @@ local function showBanner(text, name)
         pcall(function() gui:Destroy() end)
     end)
     
-    print("[DEBUG] Rainbow banner created:", text)
 end
 
 -- Cave check
@@ -1084,7 +1076,6 @@ function SurvivorTracker.start()
     end)
     
     table.insert(SurvivorTracker.connections, heartbeatConn)
-    print("Survivor tracker bật")
 end
 
 function SurvivorTracker.stop()
@@ -1106,7 +1097,6 @@ function SurvivorTracker.stop()
     end
     SurvivorTracker.activeTimers = {}
     
-    print("Survivor tracker tắt")
 end
 
 -- ===== PC PROGRESS =====
