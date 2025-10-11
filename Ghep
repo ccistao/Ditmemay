@@ -1543,6 +1543,7 @@ makeButton(Button6,"PC progress","rbxassetid://12684119225",6,function(state)
     end
 end)
 
+-- ==== NÚT BẬT SẴN ====
 task.spawn(function()
     task.wait(0.5)
     
