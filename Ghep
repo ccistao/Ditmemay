@@ -216,7 +216,7 @@ overlapParams.FilterType = Enum.RaycastFilterType.Whitelist
 overlapParams.FilterDescendantsInstances = {workspace}
 
 local function GetHRP()
-    local char = player.Character
+    local char = wallhopPlayer.Character
     if char then
         return char:FindFirstChild("HumanoidRootPart")
     end
@@ -251,7 +251,6 @@ function WallhopView.start()
     if WallhopView.enabled then return end
     WallhopView.enabled = true
     
-    -- Spawn loop quét part
     local scanTask = task.spawn(function()
         while task.wait(SCAN_DELAY) do
             if not WallhopView.enabled then break end
@@ -261,7 +260,6 @@ function WallhopView.start()
                 local partsInRadius = workspace:GetPartBoundsInRadius(hrp.Position, RADIUS, overlapParams)
                 local seen = {}
 
-                -- Thêm outlines cho part mới
                 for _, part in ipairs(partsInRadius) do
                     if IsPureBlock(part)
                         and not IsCharacterPart(part)
@@ -277,7 +275,6 @@ function WallhopView.start()
                     end
                 end
 
-                -- Xóa outlines ở part đã ra khỏi phạm vi
                 for part in pairs(WallhopView.cachedParts) do
                     if not seen[part] or not part.Parent then
                         RemoveOutline(part)
@@ -294,7 +291,6 @@ end
 function WallhopView.stop()
     WallhopView.enabled = false
     
-    -- Dừng tất cả task
     for _, conn in pairs(WallhopView.connections) do
         if typeof(conn) == "thread" then
             task.cancel(conn)
@@ -304,7 +300,6 @@ function WallhopView.stop()
     end
     WallhopView.connections = {}
     
-    -- Xóa tất cả outlines
     for part in pairs(WallhopView.cachedParts) do
         RemoveOutline(part)
     end
