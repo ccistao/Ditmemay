@@ -1489,7 +1489,7 @@ local UIS = game:GetService("UserInputService")
 
 UIS.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.Insert then
+    if input.KeyCode == Enum.KeyCode.Tab then
         MainMenuWindow.Visible = not MainMenuWindow.Visible
     end
 end)
