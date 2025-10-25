@@ -45,6 +45,8 @@ task.spawn(function()
     end
 end)
 
+task.wait(1.5)
+
 local Light = game:GetService("Lighting")
 
 function dofullbright()
