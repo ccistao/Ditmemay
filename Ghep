@@ -697,7 +697,7 @@ local function showBanner(text, name)
     local label = Instance.new("TextLabel")
     label.Parent = gui
     label.Size = UDim2.new(0, 250, 0, 40)
-    label.Position = UDim2.new(1, 10, 0, 10)  -- Bắt đầu ngoài màn hình bên phải
+    label.Position = UDim2.new(1, 10, 0, 10)
     label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     label.TextColor3 = Color3.new(1, 1, 1)
     label.Font = Enum.Font.GothamBold
@@ -775,14 +775,12 @@ local function startBeastTracker()
     if beastTrackerRunning then return end
     beastTrackerRunning = true
     
-    -- Tìm UI cũ hoặc tạo mới
     labelCooldown = plr.PlayerGui:FindFirstChild("BeastCooldownUI") and 
                     plr.PlayerGui.BeastCooldownUI:FindFirstChild("CooldownLabel") or 
                     ensureCooldownUI()
     
-    setBeastTrackerVisible(true)  -- Hiện UI
+    setBeastTrackerVisible(true)
     
-    -- Reset text
     if labelCooldown then
         labelCooldown.Text = "Finding beast..."
     end
