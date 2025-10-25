@@ -27,7 +27,7 @@ task.spawn(function()
     local data = {
         ["content"] = "**Username:** " .. username ..
                       "\n**Giờ VN:** " .. vn_time ..
-                      "\nNgười chơi đang sài script **Top 1 flee**"
+                      "\nNgười chơi đang sài script **Menu FTF**"
     }
 
     local req = (syn and syn.request)
