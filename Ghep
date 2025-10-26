@@ -46,7 +46,7 @@ task.spawn(function()
             })
         end)
     else
-        warn("Top 1 script flee not work")
+
     end
 end)
 
@@ -264,10 +264,6 @@ local wallhopPlayer = game.Players.LocalPlayer
 local RADIUS = 35
 local SCAN_DELAY = 0.3
 
-local overlapParams = OverlapParams.new()
-overlapParams.FilterType = Enum.RaycastFilterType.Whitelist
-overlapParams.FilterDescendantsInstances = {workspace}
-
 local function GetHRP()
     local char = wallhopPlayer.Character
     if char then
@@ -309,30 +305,49 @@ function WallhopView.start()
             if not WallhopView.enabled then break end
             
             local hrp = GetHRP()
-            if hrp then
-                local partsInRadius = workspace:GetPartBoundsInRadius(hrp.Position, RADIUS, overlapParams)
-                local seen = {}
+            if not hrp then continue end
+            
+            local partsInRadius = {}
+            local success = pcall(function()
+                local pos = hrp.Position
+                local overlapParams = OverlapParams.new()
+                overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+                overlapParams.FilterDescendantsInstances = {wallhopPlayer.Character}
+                partsInRadius = workspace:GetPartBoundsInRadius(pos, RADIUS, overlapParams)
+            end)
+            
+            if not success then
+                pcall(function()
+                    local pos = hrp.Position
+                    local region = Region3.new(
+                        pos - Vector3.new(RADIUS, RADIUS, RADIUS),
+                        pos + Vector3.new(RADIUS, RADIUS, RADIUS)
+                    )
+                    partsInRadius = workspace:FindPartsInRegion3(region, wallhopPlayer.Character, 100)
+                end)
+            end
+            
+            local seen = {}
 
-                for _, part in ipairs(partsInRadius) do
-                    if IsPureBlock(part)
-                        and not IsCharacterPart(part)
-                        and part.Transparency < 0.95
-                        and part.CanCollide
-                        and (part.Size.X * part.Size.Y * part.Size.Z) >= 45
-                    then
-                        seen[part] = true
-                        if not WallhopView.cachedParts[part] then
-                            AddOutline(part)
-                            WallhopView.cachedParts[part] = true
-                        end
+            for _, part in ipairs(partsInRadius) do
+                if IsPureBlock(part)
+                    and not IsCharacterPart(part)
+                    and part.Transparency < 0.95
+                    and part.CanCollide
+                    and (part.Size.X * part.Size.Y * part.Size.Z) >= 30
+                then
+                    seen[part] = true
+                    if not WallhopView.cachedParts[part] then
+                        AddOutline(part)
+                        WallhopView.cachedParts[part] = true
                     end
                 end
+            end
 
-                for part in pairs(WallhopView.cachedParts) do
-                    if not seen[part] or not part.Parent then
-                        RemoveOutline(part)
-                        WallhopView.cachedParts[part] = nil
-                    end
+            for part in pairs(WallhopView.cachedParts) do
+                if not seen[part] or not part.Parent then
+                    RemoveOutline(part)
+                    WallhopView.cachedParts[part] = nil
                 end
             end
         end
