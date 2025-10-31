@@ -262,23 +262,16 @@ WallhopView.cachedParts = {}
 
 local wallhopPlayer = game.Players.LocalPlayer
 local RADIUS = 35
-local SCAN_DELAY = 0.3
+local SCAN_DELAY = 0.5  -- Tăng từ 0.3 lên 0.5 để giảm lag
 
 local function GetHRP()
     local char = wallhopPlayer.Character
-    if char then
-        return char:FindFirstChild("HumanoidRootPart")
-    end
-    return nil
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
 local function IsCharacterPart(part)
     local model = part:FindFirstAncestorOfClass("Model")
     return model and game.Players:GetPlayerFromCharacter(model) ~= nil
-end
-
-local function IsPureBlock(part)
-    return part:IsA("Part") and part.Shape == Enum.PartType.Block
 end
 
 local function AddOutline(part)
@@ -300,6 +293,10 @@ function WallhopView.start()
     if WallhopView.enabled then return end
     WallhopView.enabled = true
     
+    -- Tạo OverlapParams 1 lần duy nhất
+    local overlapParams = OverlapParams.new()
+    overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+    
     local scanTask = task.spawn(function()
         while task.wait(SCAN_DELAY) do
             if not WallhopView.enabled then break end
@@ -307,30 +304,17 @@ function WallhopView.start()
             local hrp = GetHRP()
             if not hrp then continue end
             
-            local partsInRadius = {}
-            local success = pcall(function()
-                local pos = hrp.Position
-                local overlapParams = OverlapParams.new()
-                overlapParams.FilterType = Enum.RaycastFilterType.Exclude
-                overlapParams.FilterDescendantsInstances = {wallhopPlayer.Character}
-                partsInRadius = workspace:GetPartBoundsInRadius(pos, RADIUS, overlapParams)
-            end)
+            -- Update filter mỗi lần scan
+            overlapParams.FilterDescendantsInstances = {wallhopPlayer.Character}
             
-            if not success then
-                pcall(function()
-                    local pos = hrp.Position
-                    local region = Region3.new(
-                        pos - Vector3.new(RADIUS, RADIUS, RADIUS),
-                        pos + Vector3.new(RADIUS, RADIUS, RADIUS)
-                    )
-                    partsInRadius = workspace:FindPartsInRegion3(region, wallhopPlayer.Character, 100)
-                end)
-            end
-            
+            -- Chỉ dùng 1 method, bỏ fallback
+            local partsInRadius = workspace:GetPartBoundsInRadius(hrp.Position, RADIUS, overlapParams)
             local seen = {}
 
             for _, part in ipairs(partsInRadius) do
-                if IsPureBlock(part)
+                -- Gộp điều kiện, giảm function call
+                if part:IsA("Part") 
+                    and part.Shape == Enum.PartType.Block
                     and not IsCharacterPart(part)
                     and part.Transparency < 0.95
                     and part.CanCollide
@@ -344,6 +328,7 @@ function WallhopView.start()
                 end
             end
 
+            -- Cleanup
             for part in pairs(WallhopView.cachedParts) do
                 if not seen[part] or not part.Parent then
                     RemoveOutline(part)
