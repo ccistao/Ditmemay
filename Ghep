@@ -866,6 +866,7 @@ local function startBeastTracker()
             end
         end
     end)
+end
 
 -- Monitor skill & cooldown với PowerProgressPercent
 if _G.BeastHeartbeat then
