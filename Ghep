@@ -874,8 +874,8 @@ if _G.BeastHeartbeat then
 end
 
 local progressPercent = nil
-local isUsingSkill = false
-local lastPercent = 100
+local lastValue = 1
+local skillUsedThisRound = false
 
 -- Thời gian skill theo từng loại
 local SKILL_TIMES = {
@@ -906,13 +906,16 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
     end
 
     local currentValue = progressPercent.Value
-    local percent = math.floor(currentValue * 100)
 
-    -- Phát hiện khi Beast dùng skill (từ 100% xuống)
-    if percent < 99 and lastPercent >= 99 and not isUsingSkill then
-        isUsingSkill = true
+    -- Xác định trạng thái dựa trên xu hướng thay đổi
+    local isIncreasing = currentValue > lastValue  -- Đang tăng = đang hồi
+    local isDecreasing = currentValue < lastValue  -- Đang giảm = đang dùng skill
+
+    -- Phát hiện khi Beast vừa dùng skill (bắt đầu giảm từ trạng thái ready)
+    if isDecreasing and lastValue >= 0.99 and not skillUsedThisRound then
+        skillUsedThisRound = true
         
-        -- Xác định skill và hiển thị banner
+        -- Hiển thị banner
         if skill == "runner" then
             showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
         elseif skill == "stalker" then
@@ -924,37 +927,39 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
         end
     end
 
-    -- Cập nhật UI theo giây
-    if percent >= 99 then
+    -- Reset flag khi skill ready trở lại
+    if currentValue >= 0.99 then
+        skillUsedThisRound = false
+    end
+
+    -- Hiển thị UI
+    if currentValue >= 0.99 then
         -- Skill Ready
         labelCooldown.Text = "Skill Ready!"
-        isUsingSkill = false
         
-    else
-        -- Tính thời gian còn lại
-        local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
-        local totalTime = skillData.use + skillData.cooldown
-        local timeRemaining = totalTime * (1 - currentValue)
+    elseif isDecreasing or currentValue < 0.1 then
+        -- ĐANG DÙNG SKILL (giá trị đang giảm)
+        local skillData = SKILL_TIMES[skill] or {use = 3, cooldown = 25}
+        local usingTime = skillData.use * (1 - currentValue)
         
-        if timeRemaining >= skillData.cooldown then
-            -- Đang dùng skill (đếm ngược từ max về 0)
-            local usingTimeLeft = timeRemaining - skillData.cooldown
-            if skill == "runner" then
-                labelCooldown.Text = string.format("Using Runner: %.1fs", usingTimeLeft)
-            elseif skill == "stalker" then
-                labelCooldown.Text = string.format("Using Stalker: %.1fs", usingTimeLeft)
-            elseif skill == "seer" then
-                labelCooldown.Text = "Using Seer..."
-            else
-                labelCooldown.Text = "Using Skill..."
-            end
+        if skill == "runner" then
+            labelCooldown.Text = string.format("Using Runner: %.1fs", math.max(0, skillData.use - usingTime))
+        elseif skill == "stalker" then
+            labelCooldown.Text = string.format("Using Stalker: %.1fs", math.max(0, skillData.use - usingTime))
+        elseif skill == "seer" then
+            labelCooldown.Text = "Using Seer..."
         else
-            -- Đang cooldown (đếm ngược từ max về 0)
-            labelCooldown.Text = string.format("Cooldown: %.1fs", timeRemaining)
+            labelCooldown.Text = "Using Skill..."
         end
+        
+    elseif isIncreasing or currentValue > 0.1 then
+        -- ĐANG HỒI CHIÊU (giá trị đang tăng)
+        local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
+        local cooldownRemaining = skillData.cooldown * (1 - currentValue)
+        labelCooldown.Text = string.format("Cooldown: %.1fs", cooldownRemaining)
     end
     
-    lastPercent = percent
+    lastValue = currentValue
 end)
 
 local function stopBeastTracker()
