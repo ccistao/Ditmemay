@@ -867,129 +867,94 @@ local function startBeastTracker()
         end
     end)
 
-    -- Monitor skill & cooldown (chỉ tạo 1 connection duy nhất)
+-- Monitor skill & cooldown với PowerProgressPercent
 if _G.BeastHeartbeat then
     _G.BeastHeartbeat:Disconnect()
+end
+
+local progressPercent = nil
+local isUsingSkill = false
+local lastPercent = 100
+
+-- Thời gian skill theo từng loại
+local SKILL_TIMES = {
+    runner = {use = 3, cooldown = 22},
+    stalker = {use = 7, cooldown = 20},
+    seer = {use = 0, cooldown = 29}
+}
+
+-- Tìm PowerProgressPercent khi tìm thấy Beast
+local function findProgressPercent()
+    if beast and beast.Character then
+        local beastPowers = beast.Character:FindFirstChild("BeastPowers")
+        if beastPowers then
+            progressPercent = beastPowers:FindFirstChild("PowerProgressPercent")
+            return progressPercent ~= nil
+        end
+    end
+    return false
 end
 
 _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
     if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
     if not labelCooldown or not labelCooldown.Parent then return end
 
-    local hum = beast.Character and beast.Character:FindFirstChild("Humanoid")
-    local root = beast.Character and beast.Character:FindFirstChild("HumanoidRootPart")
-    if not hum then return end
+    -- Tìm PowerProgressPercent nếu chưa có
+    if not progressPercent or not progressPercent.Parent then
+        if not findProgressPercent() then return end
+    end
 
-    -- RUNNER
-if skill == "runner" then
-        if hum.WalkSpeed > 20 and not usedRunner then
-            usedRunner = true
+    local currentValue = progressPercent.Value
+    local percent = math.floor(currentValue * 100)
+
+    -- Phát hiện khi Beast dùng skill (từ 100% xuống)
+    if percent < 99 and lastPercent >= 99 and not isUsingSkill then
+        isUsingSkill = true
+        
+        -- Xác định skill và hiển thị banner
+        if skill == "runner" then
             showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
-
-            task.spawn(function()
-                local startUse = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Using Runner (%.1fs)", math.max(0, 3 - (tick() - startUse)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startUse >= 3
-
-                local waitStart = tick()
-                repeat
-                    RunService.Heartbeat:Wait()
-                    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-                    local currentHum = beast.Character and beast.Character:FindFirstChild("Humanoid")
-                    if not currentHum then return end
-                    if tick() - waitStart > 1.5 then break end
-                until currentHum.WalkSpeed <= 19
-
-                local startCD = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 22 - (tick() - startCD)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startCD >= 22
-
-                if foundBeast and labelCooldown and labelCooldown.Parent then
-                    labelCooldown.Text = "Cooldown: Runner Ready!!!"
-                end
-                usedRunner = false
-            end)
-        end
-
-    -- STALKER
-    elseif skill == "stalker" then
-        local anyOff = false
-        for _, o in ipairs(beast.Character:GetDescendants()) do
-            if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
-                if not o.Enabled or (o.Brightness and o.Brightness == 0) then
-                    anyOff = true
-                    break
-                end
-            end
-        end
-
-        if root and anyOff and not stalkerActive and isOutsideCave(root.Position) then
-            stalkerActive = true
+        elseif skill == "stalker" then
             showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
-
-            task.spawn(function()
-                local startUse = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Using Stalker (%.1fs)", math.max(0, 7 - (tick() - startUse)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startUse >= 7
-
-                local waitStart = tick()
-                repeat
-                    RunService.Heartbeat:Wait()
-                    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then 
-                        stalkerActive = false
-                        return 
-                    end
-                    if not beast.Character then 
-                        stalkerActive = false
-                        return 
-                    end
-                    
-                    if tick() - waitStart > 2 then break end
-                    
-                    local allOn = true
-                    for _, o in ipairs(beast.Character:GetDescendants()) do
-                        if o:IsA("PointLight") or o:IsA("SurfaceLight") or o:IsA("SpotLight") then
-                            if not o.Enabled or (o.Brightness and o.Brightness == 0) then
-                                allOn = false
-                                break
-                            end
-                        end
-                    end
-                until allOn
-
-                local startCD = tick()
-                repeat
-                    if not foundBeast then return end
-                    if labelCooldown and labelCooldown.Parent then
-                        labelCooldown.Text = string.format("Cooldown: %.1fs", math.max(0, 20 - (tick() - startCD)))
-                    end
-                    RunService.Heartbeat:Wait()
-                until tick() - startCD >= 20
-
-                if foundBeast and labelCooldown and labelCooldown.Parent then
-                    labelCooldown.Text = "Cooldown: Stalker Ready!!!"
-                end
-                stalkerActive = false
-            end)
+        elseif skill == "seer" then
+            showBanner("Beast used Q (Seer) !!!", "SeerUsedBanner")
+        else
+            showBanner("Beast used Q !!!", "SkillUsedBanner")
         end
     end
+
+    -- Cập nhật UI theo giây
+    if percent >= 99 then
+        -- Skill Ready
+        labelCooldown.Text = "Skill Ready!"
+        isUsingSkill = false
+        
+    else
+        -- Tính thời gian còn lại
+        local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
+        local totalTime = skillData.use + skillData.cooldown
+        local timeRemaining = totalTime * (1 - currentValue)
+        
+        if timeRemaining >= skillData.cooldown then
+            -- Đang dùng skill (đếm ngược từ max về 0)
+            local usingTimeLeft = timeRemaining - skillData.cooldown
+            if skill == "runner" then
+                labelCooldown.Text = string.format("Using Runner: %.1fs", usingTimeLeft)
+            elseif skill == "stalker" then
+                labelCooldown.Text = string.format("Using Stalker: %.1fs", usingTimeLeft)
+            elseif skill == "seer" then
+                labelCooldown.Text = "Using Seer..."
+            else
+                labelCooldown.Text = "Using Skill..."
+            end
+        else
+            -- Đang cooldown (đếm ngược từ max về 0)
+            labelCooldown.Text = string.format("Cooldown: %.1fs", timeRemaining)
+        end
+    end
+    
+    lastPercent = percent
 end)
-end
 
 local function stopBeastTracker()
     beastTrackerRunning = false
