@@ -907,12 +907,8 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
 
     local currentValue = progressPercent.Value
 
-    -- Xác định trạng thái dựa trên xu hướng thay đổi
-    local isIncreasing = currentValue > lastValue  -- Đang tăng = đang hồi
-    local isDecreasing = currentValue < lastValue  -- Đang giảm = đang dùng skill
-
-    -- Phát hiện khi Beast vừa dùng skill (bắt đầu giảm từ trạng thái ready)
-    if isDecreasing and lastValue >= 0.99 and not skillUsedThisRound then
+    -- Phát hiện khi Beast vừa dùng skill
+    if currentValue < 0.95 and lastValue >= 0.95 and not skillUsedThisRound then
         skillUsedThisRound = true
         
         -- Hiển thị banner
@@ -927,36 +923,39 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
         end
     end
 
-    -- Reset flag khi skill ready trở lại
+    -- Reset flag khi skill ready
     if currentValue >= 0.99 then
         skillUsedThisRound = false
     end
 
-    -- Hiển thị UI
+    -- Tính thời gian dựa trên skill type
+    local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
+    local totalTime = skillData.use + skillData.cooldown
+    local timeElapsed = totalTime * currentValue
+    
+    -- Hiển thị UI dựa trên ngưỡng rõ ràng
     if currentValue >= 0.99 then
-        -- Skill Ready
+        -- Skill Ready (>99%)
         labelCooldown.Text = "Skill Ready!"
         
-    elseif isDecreasing or currentValue < 0.1 then
-        -- ĐANG DÙNG SKILL (giá trị đang giảm)
-        local skillData = SKILL_TIMES[skill] or {use = 3, cooldown = 25}
-        local usingTime = skillData.use * (1 - currentValue)
+    elseif timeElapsed < skillData.use then
+        -- ĐANG DÙNG SKILL (thời gian trôi qua < thời gian dùng skill)
+        local usingTimeLeft = skillData.use - timeElapsed
         
         if skill == "runner" then
-            labelCooldown.Text = string.format("Using Runner: %.1fs", math.max(0, skillData.use - usingTime))
+            labelCooldown.Text = string.format("Using Runner: %.1fs", usingTimeLeft)
         elseif skill == "stalker" then
-            labelCooldown.Text = string.format("Using Stalker: %.1fs", math.max(0, skillData.use - usingTime))
+            labelCooldown.Text = string.format("Using Stalker: %.1fs", usingTimeLeft)
         elseif skill == "seer" then
             labelCooldown.Text = "Using Seer..."
         else
             labelCooldown.Text = "Using Skill..."
         end
         
-    elseif isIncreasing or currentValue > 0.1 then
-        -- ĐANG HỒI CHIÊU (giá trị đang tăng)
-        local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
-        local cooldownRemaining = skillData.cooldown * (1 - currentValue)
-        labelCooldown.Text = string.format("Cooldown: %.1fs", cooldownRemaining)
+    else
+        -- ĐANG COOLDOWN (thời gian trôi qua >= thời gian dùng skill)
+        local cooldownTimeLeft = totalTime - timeElapsed
+        labelCooldown.Text = string.format("Cooldown: %.1fs", cooldownTimeLeft)
     end
     
     lastValue = currentValue
