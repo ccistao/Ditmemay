@@ -928,19 +928,22 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
         skillUsedThisRound = false
     end
 
-    -- Tính thời gian dựa trên skill type
+    -- Lấy thông tin skill
     local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
     local totalTime = skillData.use + skillData.cooldown
-    local timeElapsed = totalTime * currentValue
     
-    -- Hiển thị UI dựa trên ngưỡng rõ ràng
+    -- Thời gian còn lại tổng cộng (từ 25s → 0s khi value từ 0 → 1)
+    local timeRemaining = totalTime * (1 - currentValue)
+    
+    -- Hiển thị UI
     if currentValue >= 0.99 then
-        -- Skill Ready (>99%)
+        -- Skill Ready
         labelCooldown.Text = "Skill Ready!"
         
-    elseif timeElapsed < skillData.use then
-        -- ĐANG DÙNG SKILL (thời gian trôi qua < thời gian dùng skill)
-        local usingTimeLeft = skillData.use - timeElapsed
+    elseif timeRemaining > skillData.cooldown then
+        -- ĐANG DÙNG SKILL (thời gian còn lại > cooldown)
+        -- Ví dụ Runner: timeRemaining = 25s → đang dùng, 22s → chuyển sang cooldown
+        local usingTimeLeft = timeRemaining - skillData.cooldown
         
         if skill == "runner" then
             labelCooldown.Text = string.format("Using Runner: %.1fs", usingTimeLeft)
@@ -953,9 +956,8 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
         end
         
     else
-        -- ĐANG COOLDOWN (thời gian trôi qua >= thời gian dùng skill)
-        local cooldownTimeLeft = totalTime - timeElapsed
-        labelCooldown.Text = string.format("Cooldown: %.1fs", cooldownTimeLeft)
+        -- ĐANG COOLDOWN (thời gian còn lại <= cooldown)
+        labelCooldown.Text = string.format("Cooldown: %.1fs", timeRemaining)
     end
     
     lastValue = currentValue
