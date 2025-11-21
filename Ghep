@@ -956,7 +956,6 @@ end
         
         lastValue = currentValue
     end)
-end
 
 local function stopBeastTracker()
     beastTrackerRunning = false
