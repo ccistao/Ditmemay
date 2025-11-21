@@ -879,6 +879,7 @@ local isUsingSkill = false
 local isCooldown = false
 local cooldownTimeLeft = 0
 local usingTimeLeft = 0
+local skillDetected = false
 
 -- Thời gian skill theo từng loại
 local SKILL_TIMES = {
@@ -910,10 +911,24 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function(dt)
 
     local currentValue = progressPercent.Value
     
-    -- Phát hiện khi Beast dùng skill (value giảm đột ngột từ ~100% xuống thấp)
-    if currentValue < 0.9 and lastValue >= 0.99 and not isUsingSkill and not isCooldown then
+    -- ===== PHÁT HIỆN KHI BEAST DÙNG SKILL =====
+    local skillUsed = false
+    
+    -- Cách 1: Giảm đột ngột từ cao xuống thấp
+    if currentValue < 0.85 and lastValue >= 0.95 then
+        skillUsed = true
+    end
+    
+    -- Cách 2: Đang ở giá trị thấp và chưa phát hiện
+    if currentValue < 0.9 and not isUsingSkill and not isCooldown and not skillDetected then
+        skillUsed = true
+    end
+    
+    -- Khi phát hiện skill được dùng
+    if skillUsed then
         isUsingSkill = true
         isCooldown = false
+        skillDetected = true
         
         -- Lấy thông tin skill
         local skillData = SKILL_TIMES[skill] or {use = 3, cooldown = 22, total = 25}
@@ -930,9 +945,16 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function(dt)
         else
             showBanner("Beast used Q !!!", "SkillUsedBanner")
         end
+        
+        print("[DEBUG] Skill detected! Value:", currentValue, "Skill:", skill)
     end
     
-    -- Đếm thời gian sử dụng skill
+    -- Reset skillDetected khi value về cao (skill ready trở lại)
+    if currentValue >= 0.98 and not isUsingSkill and not isCooldown then
+        skillDetected = false
+    end
+    
+    -- ===== ĐẾM THỜI GIAN SỬ DỤNG SKILL =====
     if isUsingSkill then
         usingTimeLeft = math.max(0, usingTimeLeft - dt)
         
@@ -950,10 +972,14 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function(dt)
         if usingTimeLeft <= 0 then
             isUsingSkill = false
             isCooldown = true
+            print("[DEBUG] Skill usage ended, starting cooldown")
         end
+        
+        lastValue = currentValue
+        return
     end
     
-    -- Đếm thời gian cooldown
+    -- ===== ĐẾM THỜI GIAN COOLDOWN =====
     if isCooldown then
         cooldownTimeLeft = math.max(0, cooldownTimeLeft - dt)
         labelCooldown.Text = string.format("Cooldown: %.1fs", cooldownTimeLeft)
@@ -962,11 +988,15 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function(dt)
         if cooldownTimeLeft <= 0 then
             isCooldown = false
             labelCooldown.Text = "Skill Ready!"
+            print("[DEBUG] Cooldown ended, skill ready")
         end
+        
+        lastValue = currentValue
+        return
     end
     
-    -- Phát hiện skill đã ready (value về ~100%)
-    if currentValue >= 0.99 and not isUsingSkill and not isCooldown then
+    -- ===== HIỂN THỊ SKILL READY =====
+    if currentValue >= 0.98 then
         labelCooldown.Text = "Skill Ready!"
     end
     
