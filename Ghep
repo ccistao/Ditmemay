@@ -91,7 +91,7 @@ local function createText(t,y,s)
     return l
 end
 
-local main = createText("script made by trongluong",-35,38)
+local main = createText("script made by 2 devs",-35,38)
 local sub = createText("ver 1.0.0",10,26)
 
 local function fade(lbl, a)
