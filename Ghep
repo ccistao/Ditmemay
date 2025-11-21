@@ -869,99 +869,94 @@ local function startBeastTracker()
 end
 
 -- Monitor skill & cooldown với PowerProgressPercent
-if _G.BeastHeartbeat then
-    _G.BeastHeartbeat:Disconnect()
-end
+    if _G.BeastHeartbeat then
+        _G.BeastHeartbeat:Disconnect()
+    end
 
-local progressPercent = nil
-local lastValue = 1
-local skillUsedThisRound = false
+    local progressPercent = nil
+    local lastValue = 1
 
--- Thời gian skill theo từng loại
-local SKILL_TIMES = {
-    runner = {use = 3, cooldown = 22},
-    stalker = {use = 7, cooldown = 20},
-    seer = {use = 0, cooldown = 29}
-}
+    -- Thời gian skill theo từng loại
+    local SKILL_TIMES = {
+        runner = {use = 3, cooldown = 22, total = 25},
+        stalker = {use = 7, cooldown = 20, total = 27},
+        seer = {use = 0, cooldown = 29, total = 29}
+    }
 
--- Tìm PowerProgressPercent khi tìm thấy Beast
-local function findProgressPercent()
-    if beast and beast.Character then
-        local beastPowers = beast.Character:FindFirstChild("BeastPowers")
-        if beastPowers then
-            progressPercent = beastPowers:FindFirstChild("PowerProgressPercent")
-            return progressPercent ~= nil
+    -- Tìm PowerProgressPercent khi tìm thấy Beast
+    local function findProgressPercent()
+        if beast and beast.Character then
+            local beastPowers = beast.Character:FindFirstChild("BeastPowers")
+            if beastPowers then
+                progressPercent = beastPowers:FindFirstChild("PowerProgressPercent")
+                return progressPercent ~= nil
+            end
         end
-    end
-    return false
-end
-
-_G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
-    if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
-    if not labelCooldown or not labelCooldown.Parent then return end
-
-    -- Tìm PowerProgressPercent nếu chưa có
-    if not progressPercent or not progressPercent.Parent then
-        if not findProgressPercent() then return end
+        return false
     end
 
-    local currentValue = progressPercent.Value
+    _G.BeastHeartbeat = RunService.Heartbeat:Connect(function()
+        if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
+        if not labelCooldown or not labelCooldown.Parent then return end
 
-    -- Phát hiện khi Beast vừa dùng skill
-    if currentValue < 0.95 and lastValue >= 0.95 and not skillUsedThisRound then
-        skillUsedThisRound = true
+        -- Tìm PowerProgressPercent nếu chưa có
+        if not progressPercent or not progressPercent.Parent then
+            if not findProgressPercent() then return end
+        end
+
+        local currentValue = progressPercent.Value
         
-        -- Hiển thị banner
-        if skill == "runner" then
-            showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
-        elseif skill == "stalker" then
-            showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
-        elseif skill == "seer" then
-            showBanner("Beast used Q (Seer) !!!", "SeerUsedBanner")
+        -- Phát hiện khi Beast dùng skill (value giảm đột ngột)
+        if currentValue < 0.9 and lastValue >= 0.99 then
+            -- Hiển thị banner
+            if skill == "runner" then
+                showBanner("Beast used Q (Runner) !!!", "RunnerUsedBanner")
+            elseif skill == "stalker" then
+                showBanner("Beast used Q (Stalker) !!!", "StalkerUsedBanner")
+            elseif skill == "seer" then
+                showBanner("Beast used Q (Seer) !!!", "SeerUsedBanner")
+            else
+                showBanner("Beast used Q !!!", "SkillUsedBanner")
+            end
+        end
+
+        -- Lấy thông tin skill
+        local skillData = SKILL_TIMES[skill] or {use = 3, cooldown = 22, total = 25}
+        
+        -- Tính % dành cho việc sử dụng skill
+        local usePercent = skillData.use / skillData.total
+        
+        -- Hiển thị UI
+        if currentValue >= 0.99 then
+            -- Skill Ready (99-100%)
+            labelCooldown.Text = "Skill Ready!"
+            
+        elseif currentValue <= usePercent then
+            -- ĐANG DÙNG SKILL (0% đến usePercent)
+            local progress = currentValue / usePercent
+            local timeLeft = skillData.use * (1 - progress)
+            
+            if skill == "runner" then
+                labelCooldown.Text = string.format("Using Runner: %.1fs", timeLeft)
+            elseif skill == "stalker" then
+                labelCooldown.Text = string.format("Using Stalker: %.1fs", timeLeft)
+            elseif skill == "seer" then
+                labelCooldown.Text = "Using Seer..."
+            else
+                labelCooldown.Text = "Using Skill..."
+            end
+            
         else
-            showBanner("Beast used Q !!!", "SkillUsedBanner")
-        end
-    end
-
-    -- Reset flag khi skill ready
-    if currentValue >= 0.99 then
-        skillUsedThisRound = false
-    end
-
-    -- Lấy thông tin skill
-    local skillData = SKILL_TIMES[skill] or {use = 0, cooldown = 25}
-    local totalTime = skillData.use + skillData.cooldown
-    
-    -- Thời gian còn lại tổng cộng (từ 25s → 0s khi value từ 0 → 1)
-    local timeRemaining = totalTime * (1 - currentValue)
-    
-    -- Hiển thị UI
-    if currentValue >= 0.99 then
-        -- Skill Ready
-        labelCooldown.Text = "Skill Ready!"
-        
-    elseif timeRemaining > skillData.cooldown then
-        -- ĐANG DÙNG SKILL (thời gian còn lại > cooldown)
-        -- Ví dụ Runner: timeRemaining = 25s → đang dùng, 22s → chuyển sang cooldown
-        local usingTimeLeft = timeRemaining - skillData.cooldown
-        
-        if skill == "runner" then
-            labelCooldown.Text = string.format("Using Runner: %.1fs", usingTimeLeft)
-        elseif skill == "stalker" then
-            labelCooldown.Text = string.format("Using Stalker: %.1fs", usingTimeLeft)
-        elseif skill == "seer" then
-            labelCooldown.Text = "Using Seer..."
-        else
-            labelCooldown.Text = "Using Skill..."
+            -- ĐANG COOLDOWN (usePercent đến 99%)
+            local cooldownProgress = (currentValue - usePercent) / (1 - usePercent)
+            local timeLeft = skillData.cooldown * (1 - cooldownProgress)
+            
+            labelCooldown.Text = string.format("Cooldown: %.1fs", timeLeft)
         end
         
-    else
-        -- ĐANG COOLDOWN (thời gian còn lại <= cooldown)
-        labelCooldown.Text = string.format("Cooldown: %.1fs", timeRemaining)
-    end
-    
-    lastValue = currentValue
-end)
+        lastValue = currentValue
+    end)
+end
 
 local function stopBeastTracker()
     beastTrackerRunning = false
