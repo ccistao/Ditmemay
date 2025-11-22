@@ -806,7 +806,6 @@ local function startBeastTracker()
             local gameActive = Replicated:WaitForChild("IsGameActive")
             if gameActive:IsA("BoolValue") then
                 repeat task.wait(0.5) until gameActive.Value == true
-                task.wait(0.3)
             end
 
             if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
@@ -916,12 +915,12 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function(dt)
     local skillUsed = false
     
     -- Cách 1: Giảm đột ngột từ cao xuống thấp
-    if currentValue < 0.95 and lastValue >= 0.99 then
+    if currentValue < 0.95 and lastValue >= 0.99 and lastValue > 0 then
         skillUsed = true
     end
     
     -- Cách 2: Đang ở giá trị thấp và chưa phát hiện
-    if currentValue < 0.95 and not isUsingSkill and not isCooldown and not skillDetected then
+    if currentValue < 0.95 and not isUsingSkill and not isCooldown and not skillDetected and lastValue > 0 then
         skillUsed = true
     end
     
