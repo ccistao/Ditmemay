@@ -903,7 +903,12 @@ local function findProgressPercent()
         local beastPowers = beast.Character:FindFirstChild("BeastPowers")
         if beastPowers then
             progressPercent = beastPowers:FindFirstChild("PowerProgressPercent")
-            return progressPercent ~= nil
+            if progressPercent then
+                -- Đặt lastValue = giá trị hiện tại để tránh phát hiện nhầm
+                lastValue = progressPercent.Value
+                print("[DEBUG] Found PowerProgressPercent, initial value:", progressPercent.Value)
+                return true
+            end
         end
     end
     return false
