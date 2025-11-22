@@ -819,16 +819,8 @@ local function startBeastTracker()
             if not foundBeast or not beast or not Players:FindFirstChild(beast.Name) then return end
 
             skill = tostring(power.Value):lower()
-            print("[DEBUG] Beast chose skill:", skill)
             showBanner("Beast chose " .. skill, "SkillChosenBanner")
             
-            -- Reset tracking + đợi để tránh phát hiện nhầm
-            isUsingSkill = false
-            isCooldown = false
-            skillDetected = false
-            lastValue = 0
-            task.wait(0.2)
-
             power:GetPropertyChangedSignal("Value"):Connect(function()
                 if foundBeast and beast and Players:FindFirstChild(beast.Name) then
                     skill = tostring(power.Value):lower()
@@ -860,7 +852,6 @@ local function startBeastTracker()
                 for _, p in ipairs(Players:GetPlayers()) do
                     if isBeast(p) then
                         beast, foundBeast = p, true
-                        print("[DEBUG] Found beast:", beast.Name)
                         showBanner(beast.Name .. " is Beast!!!", "BeastBanner")
                         detectSkillWhenGameActive()
                         if labelCooldown then labelCooldown.Text = "Found beast!!!" end
@@ -921,29 +912,20 @@ _G.BeastHeartbeat = RunService.Heartbeat:Connect(function(dt)
     -- Tìm PowerProgressPercent nếu chưa có
     if not progressPercent or not progressPercent.Parent then
         if not findProgressPercent() then return end
-        print("[DEBUG] Found PowerProgressPercent, initial value:", progressPercent.Value)
     end
 
     local currentValue = progressPercent.Value
 
-   -- Debug giá trị mỗi 1s
-    if not _G.lastDebugTime then _G.lastDebugTime = 0 end
-    _G.lastDebugTime = _G.lastDebugTime + dt
-    if _G.lastDebugTime >= 1 then
-        print("[DEBUG] Current value:", currentValue, "Last value:", lastValue, "Skill:", skill, "Using:", isUsingSkill, "CD:", isCooldown)
-        _G.lastDebugTime = 0
-    end
-    
     -- ===== PHÁT HIỆN KHI BEAST DÙNG SKILL =====
     local skillUsed = false
     
-    -- Cách 1: Giảm đột ngột từ cao xuống thấp
-    if currentValue < 0.95 and lastValue >= 0.99 and lastValue > 0 then
+        -- Cách 1: Giảm đột ngột từ cao xuống thấp
+    if currentValue < 0.95 and lastValue >= 0.99 then
         skillUsed = true
     end
-    
+
     -- Cách 2: Đang ở giá trị thấp và chưa phát hiện
-    if currentValue < 0.95 and not isUsingSkill and not isCooldown and not skillDetected and lastValue > 0 then
+    if currentValue < 0.95 and not isUsingSkill and not isCooldown and not skillDetected then
         skillUsed = true
     end
     
